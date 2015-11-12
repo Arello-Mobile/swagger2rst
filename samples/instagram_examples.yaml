@@ -1,0 +1,23 @@
+array_items_count: 3
+types:
+  string: value
+  date: '2000-12-01'
+  date-time: '2000-12-01T12:00:00.000Z'
+  number: 1.2
+  integer: 5
+  boolean: false
+definitions:
+  '#/definitions/Media':
+    likes.count: 10
+    likes.data.user_name: liked_user
+    user.user_name: my_login
+  '#/definitions/MiniProfile':
+    user_name: some_login
+    full_name: John Smith
+paths:
+  '/users/{user-id}/relationship':
+    post:
+      parameters:
+        action: approve
+      responses:
+        200.data.user_name: other_login

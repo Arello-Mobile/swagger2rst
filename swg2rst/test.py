@@ -14,6 +14,8 @@ class BaseSwaggerTestCase(object):
 
     swagger_filename = None
     swagger_doc = None
+    example_filename = None
+    examples = None
 
     @classmethod
     def setUpClass(cls):
@@ -25,7 +27,16 @@ class BaseSwaggerTestCase(object):
         if doc is None:
             raise SkipTest('File is empty')
 
+        if cls.example_filename:
+            example_file = os.path.join(SAMPLES_PATH, cls.example_filename)
+            with codecs.open(example_file, 'r', encoding='utf-8') as _file:
+                cls.examples = json.load(_file)
+
+            if not cls.examples:
+                raise SkipTest('Example file is empty')
+
         cls.swagger_doc = swagger.BaseSwaggerObject(doc)
+        cls.exampilator = cls.swagger_doc.exampilator
 
     def test_swagger_root(self):
         map(functools.partial(self.assertIsInstance, cls=list), self.swagger_doc.tags.values())
@@ -38,7 +49,7 @@ class BaseSwaggerTestCase(object):
 
     def test_security_definitions(self):
         if 'securityDefinitions' in self.swagger_doc.raw:
-            self.assertItemsEqual(
+            self.assertSequenceEqual(
                 self.swagger_doc.raw['securityDefinitions'].keys(),
                 self.swagger_doc.security_definitions.keys()
             )
@@ -66,7 +77,8 @@ class BaseSwaggerTestCase(object):
 
     def _get_definition_schema(self, name):
         schema_obj = self.swagger_doc.raw['definitions'][name]
-        schema = swagger.Schema(schema_obj, name, swagger.SchemaTypes.DEFINITION)
+        schema = swagger.Schema(
+            schema_obj, swagger.SchemaTypes.DEFINITION, name=name, root=None)
 
         self.assertTrue(self.swagger_doc.schemas.contains(schema.schema_id))
         self.assertEqual(self.swagger_doc.schemas.get(schema.schema_id).name, name)
@@ -94,6 +106,53 @@ class BaseSwaggerTestCase(object):
 
                 if 'security' in operation_obj:
                     self._test_security(operation.security)
+
+    def test_primitive_examples(self):
+        
+        examples = self.exampilator.DEFAULT_EXAMPLES
+        method = self.exampilator.get_example_value_for_primitive_type
+        pairs = (
+            (method('string', {}, ''), examples['string']),
+            (method('string', {}, 'date'), examples['date']),
+            (method('string', {}, 'date-time'), examples['date-time']),
+            (method('', {'default': 'default'}, ''), 'default'),
+            (method('', {'enum': [1, 2, 3]}, ''), 1),
+            (method('integer', {}, ''), examples['integer']),
+            (method('integer', {'minimum': 1000}, ''),
+             examples['integer'] if examples['integer'] >= 1000 else 1000),
+            (method('integer', {'maximum': -1000}, ''),
+             examples['integer'] if examples['integer'] <= -1000 else -1000),
+            (method('integer', {'minimum': 1000, 'exclusive_minimum': True}, ''),
+             examples['integer'] if examples['integer'] > 1000 else 1001),
+            (method('integer', {'maximum': -1000, 'exclusive_maximum': True}, ''),
+             examples['integer'] if examples['integer'] < -1000 else -1001),
+            (method('boolean', {}, ''), examples['boolean']),
+        )
+        for pair in pairs:
+            self.assertEqual(*pair)
+
+    def test_custom_examples(self):
+        self.exampilator.fill_examples(self.examples)
+        if 'types' in self.examples:
+            for _type, value in self.examples['types'].items():
+                self.assertEqual(self.exampilator.DEFAULT_EXAMPLES[_type], value)
+        else:
+            self.assertDictEqual(
+                self.exampilator.DEFAULT_EXAMPLES, swagger._DEFAULT_EXAMPLES)
+
+        if 'array_items_count' in self.examples:
+            self.assertEqual(self.exampilator.EXAMPLE_ARRAY_ITEMS_COUNT,
+                             self.examples['array_items_count'])
+
+        integer_example = self.examples['types'].get(
+            'integer', swagger._DEFAULT_EXAMPLES['integer'])
+        len_examples =  self.examples.get('array_items_count', 2)
+
+        self.assertEqual(
+            self.exampilator.get_example_for_array(
+                {'type': 'integer', 'type_properties': {}, 'type_format': None}),
+            [integer_example] * len_examples)
+
 
     def _test_parameters(self, operation_obj, operation, params_count):
         if 'parameters' in operation_obj:
@@ -132,6 +191,39 @@ class BaseSwaggerTestCase(object):
 class InstagramTestCase(BaseSwaggerTestCase, TestCase):
 
     swagger_filename = 'instagram.json'
+    example_filename = 'instagram_examples.json'
+
+    def test_custom_examples(self):
+        super(InstagramTestCase, self).test_custom_examples()
+        self.assertEqual(
+            self.exampilator.CUSTOM_EXAMPLES['#/definitions/Media.likes.count'],
+            self.examples['definitions']['#/definitions/Media']['likes.count']
+        )
+
+        self._test_schema_example()
+        self._test_operation_example()
+
+    def _test_schema_example(self):
+        schema = self._get_definition_schema('MiniProfile')
+        raw_definition = self.examples['definitions']['#/definitions/MiniProfile']
+        self.assertEqual(self.exampilator.get_example_by_schema(schema), {
+            'full_name': raw_definition['full_name'],
+            'id': self.examples['types']['integer'],
+            'profile_picture': self.examples['types']['string'],
+            'user_name': raw_definition['user_name'],
+        })
+
+    def _test_operation_example(self):
+        raw = self.examples['paths']['/users/{user-id}/relationship']['post']
+        operation = self._make_operation('/users/{user-id}/relationship', 'post')
+
+        self.assertEqual(self.exampilator.get_body_example(operation),
+                         raw['parameters']['action'])
+
+        self.assertSequenceEqual(
+            self.exampilator.get_response_example(operation, operation.responses['200']),
+            {'data': [raw['responses']['200.data']] * self.examples['array_items_count']}
+        )
 
 
 if __name__ == '__main__':

@@ -1,22 +1,98 @@
 import json
 import re
 from collections import defaultdict
+from functools import partial
 from hashlib import md5
 from operator import attrgetter
 
 from cached_property import cached_property
+from jsonschema import (
+    validate as schema_validate, FormatChecker, ValidationError, SchemaError)
 
 from swg2rst.converter_exceptions import ConverterError
+from swg2rst.utils.logger import get_logger
 
 
 PRIMITIVE_TYPES = ('integer', 'number', 'string', 'boolean')
-DEFAULT_EXAMPLES = {
+_DEFAULT_EXAMPLES = {
     'integer': 1,
     'number': 1.0,
     'string': 'somestring',
     'date': '2015-01-01',
     'date-time': '2015-01-01T15:00:00.000Z',
     'boolean': True
+}
+
+#: json validation schema for examples file
+examples_json_schema = {
+    'type': 'object',
+    'properties': {
+        'array_items_count': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 5
+        },
+        'types': {
+            'type': 'object',
+            'properties': {
+                'string': {
+                    'type': 'string'
+                },
+                'date': {
+                    'type': 'string',
+                    'format': 'date'
+                },
+                'date-time': {
+                    'type': 'string',
+                    'format': 'date-time'
+                },
+                'integer': {
+                    'type': 'integer'
+                },
+                'number': {
+                    'type': 'number'
+                },
+                'boolean': {
+                    'type': 'boolean'
+                }
+            },
+            'additionalProperties': False
+        },
+        'definitions': {
+            'type': 'object',
+            'patternProperties': {
+                '^#/definitions/\w+$': {
+                    'type': 'object'
+                }
+            },
+            'additionalProperties': False
+        },
+        'paths': {
+            'type': 'object',
+            'patternProperties': {
+                '^/': {
+                    'type': 'object',
+                    'patternProperties': {
+                        '^[a-z]{,7}$': {
+                            'type': 'object',
+                            'properties': {
+                                'parameters': {
+                                    'type': 'object'
+                                },
+                                'responses': {
+                                    'type': 'object'
+                                }
+                            },
+                            'additionalProperties': False
+                        }
+                    },
+                    'additionalProperties': False
+                }
+            },
+            'additionalProperties': False
+        }
+    },
+    'additionalProperties': False,
 }
 
 
@@ -46,6 +122,259 @@ class SecurityTypes(object):
     }
 
 
+class Exampilator(object):
+    """ Example Manager
+    """
+
+    DEFAULT_EXAMPLES = _DEFAULT_EXAMPLES.copy()
+    CUSTOM_EXAMPLES = dict()
+    EXAMPLE_ARRAY_ITEMS_COUNT = 2
+
+    logger = get_logger()
+    _json_format_checker = FormatChecker()
+
+    @classmethod
+    def fill_examples(cls, examples):
+
+        if 'array_items_count' in examples:
+            cls.EXAMPLE_ARRAY_ITEMS_COUNT = examples['array_items_count']
+        if 'types' in examples:
+            cls.DEFAULT_EXAMPLES.update(examples['types'])
+        if 'definitions' in examples:
+            for path, fields in examples['definitions'].items():
+                for field, value in fields.items():
+                    key = '.'.join((path, field))
+                    cls.CUSTOM_EXAMPLES[key] = value
+        if 'paths' in examples:
+            for path, methods in examples['paths'].items():
+                key = "#/paths/'{}'".format(path)
+                for method, operations in methods.items():
+                    for section, fields in operations.items():
+                        for field, value in fields.items():
+                            _key = '/'.join((key, method, section, field))
+                            cls.CUSTOM_EXAMPLES[_key] = value
+
+    @classmethod
+    def get_example_value_for_primitive_type(cls, type_, properties, format_, **kw):
+        paths = kw.get('paths')
+        if paths:
+            result, path = cls._get_custom_example(paths)
+            if result:
+                cls._example_validate(path, result, type_, format_)
+                return result
+
+        if properties.get('default') is not None:
+            result = properties['default']
+        elif properties.get('enum'):
+            result = properties['enum'][0]
+        else:
+            result = getattr(cls, '%s_example' % type_)(properties, format_)
+
+        return result
+
+    @classmethod
+    def string_example(cls, properties, type_format):
+        result = cls.DEFAULT_EXAMPLES[type_format or 'string']
+        if properties.get('min_length'):
+            result.ljust(properties['min_length'], 'a')
+        if properties.get('max_length'):
+            result = result[:properties['max_length']]
+        return result
+
+    @classmethod
+    def integer_example(cls, properties, *args):
+        result = cls.DEFAULT_EXAMPLES['integer']
+        if properties.get('minimum') is not None and result < properties['minimum']:
+            result = properties['minimum']
+            if properties.get('exclusive_minimum', False):
+                result += 1
+        elif properties.get('maximum') is not None and result > properties['maximum'] :
+            result = properties['maximum']
+            if properties.get('exclusive_maximum', False):
+                result -= 1
+        return result
+
+    @classmethod
+    def number_example(cls, properties, *args):
+        return cls.integer_example(properties)
+
+    @classmethod
+    def boolean_example(cls, *args):
+        return cls.DEFAULT_EXAMPLES['boolean']
+
+    @classmethod
+    def get_example_by_schema(cls, schema, ignored_schemas=None, paths=None, name=''):
+        """ Get example by schema object
+
+        :param Schema schema: current schema
+        :param list ignored_schemas: list of previous schemas
+            for avoid circular references
+        :param list paths: list object paths (ex. #/definitions/Model.property)
+            If nested schemas exists, custom examples checks in order from paths
+        :param str name: name of property schema object if exists
+        :return: dict or list (if schema is array)
+        """
+        if schema.schema_example:
+            return schema.schema_example
+
+        if ignored_schemas is None:
+            ignored_schemas = []
+
+        if paths is None:
+            paths = []
+
+        if name:
+            paths = list(map(lambda path: '.'.join((path, name)), paths))
+
+        if schema.ref_path:
+            paths.append(schema.ref_path)
+
+        if schema.schema_id in ignored_schemas:
+            result = [] if schema.is_array else {}
+        else:
+            schemas = ignored_schemas + [schema.schema_id]
+            kwargs = dict(
+                ignored_schemas=schemas,
+                paths=paths
+            )
+            if schema.is_array:
+                result = cls.get_example_for_array(
+                    schema.item, **kwargs)
+            elif schema.type in PRIMITIVE_TYPES:
+                result = cls.get_example_value_for_primitive_type(
+                    schema.type, schema.raw, schema.type_format, paths=paths
+                )
+            elif schema.all_of:
+                result = {}
+                for _schema_id in schema.all_of:
+                    schema = SchemaObjects.get(_schema_id)
+                    result.update(cls.get_example_by_schema(schema, **kwargs))
+            else:
+                result = cls.get_example_for_object(
+                    schema.properties, **kwargs)
+        return result
+
+    @classmethod
+    def get_body_example(cls, operation):
+        """ Get example for body parameter example by operation
+
+        :param Operation operation: operation object
+        """
+        path = "#/paths/'{0.path}'/{0.method}/parameters/{name}".format(
+            operation, name=operation.body.name or 'body')
+        return cls.get_example_by_schema(operation.body, paths=[path])
+
+    @classmethod
+    def get_response_example(cls, operation, response):
+        """ Get example for response object by operation object
+
+        :param Operation operation: operation object
+        :param Response response: response object
+        """
+        path = "#/paths/'{}'/{}/responses/{}".format(
+            operation.path, operation.method, response.name)
+        kwargs = dict(paths=[path])
+
+        if response.type in PRIMITIVE_TYPES:
+            result = cls.get_example_value_for_primitive_type(
+                response.type, response.properties, response.type_format, **kwargs)
+        else:
+            schema = SchemaObjects.get(response.type)
+            result = cls.get_example_by_schema(schema, **kwargs)
+
+        return result
+
+    @classmethod
+    def get_header_example(cls, header):
+        """ Get example for header object
+
+        :param Header header: Header object
+        :return: example
+        :rtype: dict
+        """
+        if header.is_array:
+            result = cls.get_example_for_array(header.item)
+        else:
+            example_method = getattr(cls, '{}_example'.format(header.type))
+            result = example_method(header.properties, header.type_format)
+        return {header.name: result}
+
+    @classmethod
+    def get_property_example(cls, property_, **kw):
+        """ Get example for property
+
+        :param dict property_:
+        :return: example value
+        """
+        paths = kw.get('paths', None)
+        name = kw.get('name', '')
+        result = None
+        if name and paths:
+            paths = list(map(lambda path: '.'.join((path, name)), paths))
+            result, path = cls._get_custom_example(paths)
+            if result is not None and property_['type'] in PRIMITIVE_TYPES:
+                cls._example_validate(
+                    path, result, property_['type'], property_['type_format'])
+                return result
+
+        if SchemaObjects.contains(property_['type']):
+            schema = SchemaObjects.get(property_['type'])
+            if result is not None:
+                if schema.is_array:
+                    if not isinstance(result, list):
+                        result = [result] * cls.EXAMPLE_ARRAY_ITEMS_COUNT
+                else:
+                    if isinstance(result, list):
+                        cls.logger.warning(
+                            'Example type mismatch in path {}'.format(schema.ref_path))
+            else:
+                result = cls.get_example_by_schema(schema, **kw)
+        else:
+            result = cls.get_example_value_for_primitive_type(
+                property_['type'],
+                property_['type_properties'],
+                property_['type_format'],
+                **kw
+            )
+        return result
+
+    @classmethod
+    def _get_custom_example(cls, paths):
+        if cls.CUSTOM_EXAMPLES:
+            for path in paths:
+                if path in cls.CUSTOM_EXAMPLES:
+                    return cls.CUSTOM_EXAMPLES[path], path
+        return None, ''
+
+    @classmethod
+    def get_example_for_array(cls, obj_item, **kw):
+        return [cls.get_property_example(obj_item, **kw)] * cls.EXAMPLE_ARRAY_ITEMS_COUNT
+
+    @classmethod
+    def get_example_for_object(cls, properties, **kw):
+        result = {}
+        if properties:
+            for _property in properties:
+                kw['name'] = _property['name']
+                result[_property['name']] = cls.get_property_example(
+                    _property, **kw)
+        return result
+
+    @classmethod
+    def schema_validate(cls, obj, json_schema):
+        schema_validate(obj, json_schema, format_checker=cls._json_format_checker)
+
+    @classmethod
+    def _example_validate(cls, path, value, type_, format_=None):
+        _json_schema = {'type': type_}
+        if format_:
+            _json_schema['format'] = format_
+        try:
+            cls.schema_validate(value, _json_schema)
+        except (ValidationError, SchemaError):
+            cls.logger.warning('Example type mismatch in path {}'.format(path))
+
+
 class SchemaObjects(object):
     """ Schema collection
     """
@@ -53,17 +382,18 @@ class SchemaObjects(object):
     _schemas = dict()
 
     @classmethod
-    def create_schema(cls, obj, name, schema_type):
+    def create_schema(cls, obj, name, schema_type, root):
         """ Create Schema object
 
         :param dict obj: swagger schema object
         :param str name: schema name
         :param str schema_type: schema location.
             Can be ``inline`` or ``definition``
+        :param BaseSwaggerObject root: root doc
         :return: new schema
         :rtype: Schema
         """
-        schema = Schema(obj, name, schema_type)
+        schema = Schema(obj, schema_type, name=name, root=root)
         cls.add_schema(schema)
         return schema
 
@@ -116,6 +446,31 @@ class SchemaObjects(object):
     def clear(cls):
         cls._schemas = dict()
 
+    @classmethod
+    def get_type_description(cls, _type, *args, **kwargs):
+        """ Get description of type
+
+        :param str _type:
+        :param post_callback:
+        :rtype: str
+        """
+        if not cls.contains(_type):
+            return _type
+
+        schema = cls.get(_type)
+        if schema.all_of:
+            models = ', '.join(map(
+                partial(cls.get_type_description, *args, **kwargs), schema.all_of))
+            result = '({})'.format(models)
+        elif schema.is_array:
+            result = 'array of {}'.format(
+                cls.get_type_description(schema.item['type'], *args, **kwargs))
+        else:
+            result = schema.name
+            if kwargs.get('post_callback'):
+                result = kwargs['post_callback'](result, schema, *args, **kwargs)
+        return result
+
 
 class SecurityMixin(object):
 
@@ -164,11 +519,24 @@ class BaseSwaggerObject(SecurityMixin):
     #: key: tag name, value: dict with keys ``description`` and ``externalDocs``
     tag_descriptions = None
 
-    def __init__(self, obj):
+    #: Example Manager. Must be subclass of Exampilator
+    exampilator = None
+
+    def __init__(self, obj, exampilator=None, examples=None):
         if obj['swagger'] != '2.0':
             raise ConverterError('Invalid Swagger version')
 
         self.raw = obj
+        self.exampilator = exampilator or Exampilator
+        assert issubclass(self.exampilator, Exampilator)
+        if examples:
+            try:
+                self.exampilator.schema_validate(examples, examples_json_schema)
+            except ValidationError as err:
+                raise ConverterError(err.message)
+
+            self.exampilator.fill_examples(examples)
+
         if 'definitions' in obj:
             self._fill_schemas_from_definitions(obj['definitions'])
 
@@ -203,7 +571,8 @@ class BaseSwaggerObject(SecurityMixin):
                 if param.get('$ref'):
                     path_params.append(self.parameter_definitions[param['$ref']])
                 else:
-                    path_params.append(Parameter(param))
+                    path_params.append(
+                        Parameter(param, name=param['name'], root=self))
             for method, operation in operations.items():
                 if method == 'parameters':
                     continue
@@ -226,49 +595,34 @@ class BaseSwaggerObject(SecurityMixin):
         self.schemas.clear()
         for name, definition in obj.items():
             self.schemas.create_schema(
-                definition, name, SchemaTypes.DEFINITION)
+                definition, name, SchemaTypes.DEFINITION, root=self)
 
     def _fill_parameter_definitions(self, obj):
         self.parameter_definitions = {}
         for name, parameter in obj.items():
             key = '#/parameters/{}'.format(name)
-            self.parameter_definitions[key] = Parameter(parameter, is_root=True)
+            self.parameter_definitions[key] = Parameter(
+                parameter, name=parameter['name'], root=self)
 
     def _fill_response_definitions(self, obj):
         self.response_definitions = {}
         for name, response in obj.items():
             key = '#/responses/{}'.format(name)
-            self.response_definitions[key] = Response(name, response)
+            self.response_definitions[key] = Response(
+                response, name=name, root=self)
 
     def _fill_security_definitions(self, obj):
         self.security_definitions = {
             name: SecurityDefinition(name, _obj) for name, _obj in obj.items()
         }
 
-    def get_type_description(self, _type):
+    def get_type_description(self, _type, *args, **kwargs):
         """ Get description of type
 
         :param str _type:
         :rtype: str
         """
-        if self.schemas.contains(_type):
-            return self.get_schema_description(_type)
-        else:
-            return _type
-
-    def get_schema_description(self, schema_id):
-        """ Get description of schema by id
-
-        :param str schema_id:
-        :rtype: str
-        """
-        schema = self.schemas.get(schema_id)
-        if schema.is_array:
-            result = 'array of {}'.format(
-                self.get_type_description(schema.item['type']))
-        else:
-            result = self.schemas.get(schema_id).name
-        return result
+        return self.schemas.get_type_description(_type, *args, **kwargs)
 
 
 class Operation(SecurityMixin):
@@ -322,7 +676,8 @@ class Operation(SecurityMixin):
             if '$ref' in obj:
                 self.parameters.append(self.root.parameter_definitions[obj['$ref']])
             else:
-                self.parameters.append(Parameter(obj))
+                self.parameters.append(
+                    Parameter(obj, name=obj['name'], root=self.root))
         if path_params:
             self.parameters += path_params
         if len(self.get_parameters_by_location(['body'])) > 1:
@@ -335,7 +690,7 @@ class Operation(SecurityMixin):
             if '$ref' in obj:
                 self.responses[code] = self.root.response_definitions[obj['$ref']]
             else:
-                self.responses[code] = Response(code, obj)
+                self.responses[code] = Response(obj, name=code, root=self.root)
 
     def get_parameters_by_location(self, locations=None, excludes=None):
         """ Get parameters list by location
@@ -365,15 +720,18 @@ class Operation(SecurityMixin):
         return self.root.schemas.get(body[0].type) if body else None
 
 
-class SchemaPropertiesMixin(object):
+class AbstractTypeObject(object):
 
-    name = None
     _type = None
     type_format = None
     properties = None
-    
-    EXAMPLE_ARRAY_ITEMS_COUNT = 2
+    item = None  #: set if type is array
 
+    def __init__(self, obj, name, root, **kwargs):
+        self.raw = obj
+        self.name = name
+        self.root = root
+    
     def get_type_properties(self, property_obj, name):
         """ Get internal properties of property
 
@@ -389,7 +747,9 @@ class SchemaPropertiesMixin(object):
         if property_type in ['object', 'array']:
             schema_id = self._get_object_schema_id(property_obj, SchemaTypes.INLINE)
             if not ('$ref' in property_obj or SchemaObjects.get(schema_id)):
-                SchemaObjects.create_schema(property_obj, name, SchemaTypes.INLINE)
+                _schema = SchemaObjects.create_schema(
+                    property_obj, name, SchemaTypes.INLINE, root=self.root)
+                self._after_create_schema(_schema)
             property_type = schema_id
 
         if 'default' in property_obj:
@@ -444,76 +804,12 @@ class SchemaPropertiesMixin(object):
             return
         if not SchemaObjects.contains(schema_id):
             schema = SchemaObjects.create_schema(
-                schema_obj, self.name, SchemaTypes.INLINE)
+                schema_obj, self.name, SchemaTypes.INLINE, root=self.root)
             assert schema.schema_id == schema_id
         self._type = schema_id
 
-    def get_property_example(self, property_, *args):
-        """ Get example for property
-
-        :param dict property_:
-        :return: example value
-        """
-        if SchemaObjects.contains(property_['type']):
-            schema = SchemaObjects.get(property_['type'])
-            return schema.get_example(*args)
-        else:
-            return self._get_example_value_for_primitive_type(
-                property_['type'],
-                property_['type_properties'],
-                property_['type_format']
-            )
-
-    def _get_example_value_for_primitive_type(self, type_, properties, format_):
-
-        if properties.get('default') is not None:
-            result = properties['default']
-        elif properties.get('enum'):
-            result = properties['enum'][0]
-        else:
-            result = getattr(self, '%s_example' % type_)(properties, format_)
-
-        return result
-
-    def _get_example_for_array(self, *args):
-        return [self.get_property_example(self.item, *args)] * self.EXAMPLE_ARRAY_ITEMS_COUNT
-
-    def _get_example_for_object(self, *args):
-        result = {}
-        if self.properties:
-            for _property in self.properties:
-                result[_property['name']] = self.get_property_example(
-                    _property, *args)
-        return result
-
-    @staticmethod
-    def string_example(properties, type_format):
-        result = DEFAULT_EXAMPLES[type_format] if type_format else DEFAULT_EXAMPLES['string']
-        if properties.get('min_length'):
-            result.ljust(properties['min_length'], 'a')
-        if properties.get('max_length'):
-            result = result[:properties['max_length']]
-        return result
-
-    @staticmethod
-    def integer_example(properties, *args):
-        result = DEFAULT_EXAMPLES['integer']
-        if properties.get('minimum') is not None:
-            result = properties['minimum']
-            if properties['exclusive_minimum']:
-                result += 1
-        elif properties.get('maximum') is not None:
-            result = properties['maximum']
-            if properties['exclusive_maximum']:
-                result -= 1
-        return result
-
-    def number_example(self, properties, *args):
-        return self.integer_example(properties)
-
-    @staticmethod
-    def boolean_example(*args):
-        return True
+    def _after_create_schema(self, schema):
+        pass
 
     @property
     def type(self):
@@ -524,21 +820,16 @@ class SchemaPropertiesMixin(object):
         return self._type == 'array'
 
 
-class Parameter(SchemaPropertiesMixin):
+class Parameter(AbstractTypeObject):
     """ Represents Swagger Parameter Object
     """
-    raw = None
-    item = None  #: set if type is array
-
-    def __init__(self, obj, is_root=False):
-        self.name = obj['name']
+    def __init__(self, obj, **kwargs):
+        super(Parameter, self).__init__(obj, **kwargs)
         self.location_in = obj['in']
         self.required = obj.get('required', False)
         self.description = obj.get('description', '')
         self.default = obj.get('default')
         self.collection_format = obj.get('collectionFormat')
-        self.raw = obj
-        self.is_root = is_root
 
         self._set_type()
 
@@ -568,25 +859,23 @@ class Parameter(SchemaPropertiesMixin):
         return '{}_{}'.format(self.location_in, self.name)
 
 
-class Response(SchemaPropertiesMixin):
+class Response(AbstractTypeObject):
     """ Represents Swagger Response Object
     """
     headers = None
     examples = None
 
-    def __init__(self, code, obj):
-
+    def __init__(self, obj, **kwargs):
+        super(Response, self).__init__(obj, **kwargs)
         self.description = obj['description']
-        self.name = code
-        self.raw = obj
-
         self.examples = obj.get('examples')
 
         if 'schema' in obj:
             self._set_type()
 
         if 'headers' in obj:
-            self.headers = {name: Header(name, header) for name, header in obj['headers'].items()}
+            self.headers = {name: Header(header, name=name, root=self.root)
+                            for name, header in obj['headers'].items()}
 
     def _set_type(self):
         if 'type' in self.raw['schema'] and self.raw['schema']['type'] in PRIMITIVE_TYPES:
@@ -597,14 +886,12 @@ class Response(SchemaPropertiesMixin):
             self.set_type_by_schema(self.raw['schema'])
 
 
-class Header(SchemaPropertiesMixin):
+class Header(AbstractTypeObject):
     """ Represents Swagger Header Object
     """
-    item = None
 
-    def __init__(self, name, obj):
-        self.name = name
-        self.raw = obj
+    def __init__(self, obj, **kwargs):
+        super(Header, self).__init__(obj, **kwargs)
         self.description = obj.get('description')
         self._set_type()
 
@@ -622,28 +909,20 @@ class Header(SchemaPropertiesMixin):
         else:
             _, _, self.properties = self.get_type_properties(self.raw, self.name)
 
-    def get_example(self):
-        if self.is_array:
-            result = self._get_example_for_array()
-        else:
-            example_method = getattr(self, '{}_example'.format(self.type))
-            result = example_method(self.properties, self.type_format)
-        return {self.name: result}
 
-
-class Schema(SchemaPropertiesMixin):
+class Schema(AbstractTypeObject):
     """ Represents Swagger Schema Object
     """
     schema_id = None
     schema_type = None  #: definition or inline
     ref_path = None  #: path for definition schemas
-    raw = None
     nested_schemas = None
+    all_of = None
 
-    def __init__(self, obj, name, schema_type):
+    def __init__(self, obj, schema_type, **kwargs):
 
         assert schema_type in SchemaTypes.prefixes
-
+        super(Schema, self).__init__(obj, **kwargs)
         self.nested_schemas = set()
         self.schema_type = schema_type
         self._type = obj.get('type', 'object')
@@ -654,24 +933,42 @@ class Schema(SchemaPropertiesMixin):
         self.read_only = obj.get('readOnly', False)
         self.external_docs = obj.get('externalDocs')
 
-        if schema_type != SchemaTypes.INLINE:
-            self.ref_path = '#/definitions/{}'.format(name)
+        if self._type in PRIMITIVE_TYPES:
+            self.properties = [{
+                'name': kwargs.get('name', ''),
+                'description': '',
+                'required': obj.get('required', False),
+                'type': self.type,
+                'type_format': self.type_format,
+                'type_properties': self.get_type_properties(obj, '')[2],
+            }]
 
-        self.raw = obj
-        self.name = name
+        if schema_type != SchemaTypes.INLINE:
+            self.ref_path = '#/definitions/{}'.format(self.name)
 
         if self.is_array:
-            self.name += '_array'
             self.item = dict(zip(
                 ('type', 'type_format', 'type_properties'),
-                self.get_type_properties(obj['items'], name)
+                self.get_type_properties(obj['items'], self.name)
             ))
+            self.name += '_array'
             if self.item['type'] not in PRIMITIVE_TYPES:
                 self.nested_schemas.add(self.item['type'])
 
         if 'properties' in obj:
             # self.example = dict()
             self._set_properties()
+
+        if 'allOf' in obj:
+            self.all_of = []
+            for _obj in obj['allOf']:
+                _id = self._get_object_schema_id(_obj, SchemaTypes.INLINE)
+                if not SchemaObjects.contains(_id):
+                    schema = SchemaObjects.create_schema(
+                        _obj, 'inline', SchemaTypes.INLINE, self.root)
+                    assert schema.schema_id == _id
+                self.all_of.append(_id)
+                self.nested_schemas.add(_id)
 
         self._set_schema_id()
 
@@ -704,20 +1001,9 @@ class Schema(SchemaPropertiesMixin):
 
             self.properties.append(_obj)
 
-    def get_example(self, _used_schemas=None):
-        if _used_schemas is None:
-            _used_schemas = []
-
-        if self.schema_example:
-            return self.schema_example
-
-        if self.schema_id in _used_schemas:
-            result = [] if self.is_array else {}
-        else:
-            schemas = _used_schemas + [self.schema_id]
-            func = self._get_example_for_array if self.is_array else self._get_example_for_object
-            result = func(schemas)
-        return result
+    def _after_create_schema(self, schema):
+        if not self.is_array:
+            self.nested_schemas |= schema.nested_schemas
 
     @property
     def is_inline(self):

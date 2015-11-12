@@ -1,4 +1,4 @@
-
+{% set collapsible = True %}
 {{ '{title} {version}'.format(**doc.info)|header(1) }}
 
 .. toctree::
@@ -133,6 +133,7 @@
     {% endif %}
 
     {% for operation in operations %}
+{% set definition_suffix = (tag + operation.operation_id) if inline else '' %}
 
 {{ '{} ``{}``'.format(operation.method.upper(), operation.path)|header(3) }}
 
@@ -173,7 +174,7 @@
             p.name,
             p.location_in,
             'Yes' if p.required else 'No',
-            doc.get_type_description(p.type),
+            doc.get_type_description(p.type, definition_suffix),
             p.type_format or '',
             '{}'.format(p.properties|json_dumps) if p.properties else '',
             p.description|replace('\n', ' ')
@@ -190,7 +191,7 @@
 
 {{ 'Headers'|header(5) }}
 
-.. code-block:: json
+.. code-block:: javascript
 
             {% for header in headers %}
     {{ '{}: {}'.format(header.name, header.properties['default']) }}
@@ -203,14 +204,15 @@
             {% set schema = operation.body %}
             {% set schema_header = 'Body'|header(5) %}
             {% set schema_link = False %}
+            {% set exists_schema = [] %}
 
 {% include "schema.rst" %}
 
             {% set schema_link = True %}
 
-.. code-block:: json
+.. code-block:: javascript
 
-    {{ operation.body.get_example()|json_dumps(indent=4)|indent }}
+    {{ doc.exampilator.get_body_example(operation)|json_dumps(indent=4)|indent }}
 
         {% endif %}
 
@@ -230,6 +232,7 @@ Type: {{ doc.get_type_description(response.type) }}
 
                 {% else %}
                     {% set schema_header = '**Response Schema:**' %}
+                    {% set exists_schema = [] %}
 
 {% include "schema.rst" %}
                 {% endif %}
@@ -238,19 +241,19 @@ Type: {{ doc.get_type_description(response.type) }}
 
 {{ 'Headers:' }}
 
-.. code-block:: json
+.. code-block:: javascript
 
                     {% for header in response.headers.values() %}
-    {{ header.get_example()|json_dumps(indent=4)|indent }}
+    {{ doc.exampilator.get_header_example(header)|json_dumps(indent=4)|indent }}
                     {% endfor %}
 
                 {% endif %}
 
 {{ '**Example:**' }}
 
-.. code-block:: json
+.. code-block:: javascript
 
-    {{ schema.get_example()|json_dumps(indent=4)|indent }}
+    {{ doc.exampilator.get_response_example(operation, response)|json_dumps(indent=4)|indent }}
 
             {% endif %}
 
@@ -274,13 +277,15 @@ Type: {{ doc.get_type_description(response.type) }}
 
 {% endfor %}  {# end tags #}
 
+{% if not inline %}
 {{ "Data Structures"|header(2) }}
 
-{% set schema_link = True %}
+    {% set schema_link = True %}
 
-{% for schema in doc.schemas.get_schemas(['definition']) %}
-    {% set schema_header = '{} Model Structure'.format(schema.name)|header(3) %}
+    {% for schema in doc.schemas.get_schemas(['definition']) %}
+        {% set schema_header = '{} Model Structure'.format(schema.name)|header(3) %}
 
 {% include "schema.rst" %}
 
-{% endfor %}
+    {% endfor %}
+{% endif %}

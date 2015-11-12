@@ -1,6 +1,6 @@
-{% if schema_link %}
+{% if schema_link or inline %}
 
-.. _{{ schema.schema_id }}:
+.. _{{ '{}{}'.format(schema.schema_id, definition_suffix) }}:
 
 {% endif %}
 
@@ -8,7 +8,7 @@
 
 {% if schema.type == 'array' %}
 
-{{ doc.get_type_description(schema.item['type']) }}
+{{ doc.get_type_description(schema.item['type'], definition_suffix) }}
 
 {% endif %}
 
@@ -24,7 +24,7 @@
             ' | '.join((
                 p['name'],
                 'Yes' if p['required'] else 'No',
-                doc.get_type_description(p['type']),
+                doc.get_type_description(p['type'], definition_suffix),
                 p['type_format'] or '',
                 '{}'.format(p['type_properties']) if p['type_properties'] else '',
                 p['description']
@@ -33,18 +33,28 @@
                 }}
     {% endfor %}
 
+{% elif schema.all_of %}
+
+{{ doc.get_type_description(schema.schema_id, definition_suffix) }}
+
 {% else %}
 
-{{ 'Empty object ({})' }}
+{{ 'Any object ({})' }}
 
+{% endif %}
+
+{% if inline %}
+    {% set _ = exists_schema.append(schema.schema_id) %}
 {% endif %}
 
 {% for schema_id in schema.nested_schemas %}
     {% set schema = doc.schemas.get(schema_id) %}
-    {% if schema.is_inline and not schema.is_array %}
-        {% set schema_header = '**{} schema:**'.format(schema.name)|capitalize %}
+    {% if not schema.is_array %}
+        {% if (not inline and schema.is_inline) or (inline and schema_id not in exists_schema) %}
+            {% set schema_header = '**{} schema:**'.format(schema.name) %}
 
 {% include "schema.rst"%}
 
+        {% endif %}
     {% endif %}
 {% endfor %}
