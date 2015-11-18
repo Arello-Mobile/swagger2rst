@@ -1,72 +1,55 @@
-
 # Swagger to .rst Converter
 
-
 ## Install
-
 ```bash
 pip install swagger2rst
 ```
 
-## Use Command
-
+## Usage examples
 Command - ``swg2rst``
 
-Positional arguments:
-
-- ``path`` - path to swagger file - "json" or "yaml"
+Required arguments:
+- ``path`` - path to a swagger file ("json" or "yaml")
+- ``--format (-f)`` - output file format. Currenty only "rst" is supported (required)
 
 Options:
-
-- ``--format(-f)`` - format output doc file - "rst" (required)
-- ``--destination-path (-d)`` - path to folder for saving files
-- ``--template (-t)`` - path to custom template file (default: templates/basic.<format>)
-- ``--examples(-e)`` - path to custom examples file - "json" or "yaml"
-- ``--inline (-i)`` - output schema definitions locally in paths, otherwise in isolated section ``Data Structures``
+- ``--destination-path (-d)`` - directory to save files into
+- ``--template (-t)`` - custom template file path (default: templates/basic.<format>)
+- ``--examples(-e)`` - custom examples definitions file path ("json" or "yaml")
+- ``--inline (-i)`` - put schema definitions in paths, otherwise in a separate ``Data Structures`` section
 
 Example:
-
 ```bash
-swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/
-swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/ -e /home/user/examples.yaml
-cat docs/swagger.json | swg2rst -f rst -t templates/custom.rst | grep /api
+> swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/
+> swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/ -e /home/user/examples.yaml
+> cat docs/swagger.json | swg2rst -f rst -t templates/custom.rst | grep /api
 ```
 
-
-## Optional improvements
-
-For converting GFM descriptions to restructuredText install ``pandoc`` and use custom Jinja filter ``md2rst``
+## Additional enhancements
+To convert GFM descriptions into _restructuredText_ install ``pandoc`` and use custom Jinja filter ``md2rst``
 
 ```bash
-sudo apt-get install pandoc
-pip install pypandoc
+> sudo apt-get install pandoc
+> pip install pypandoc
 ```
-
 
 ```python
 {{ doc.info['description']|md2rst }}
 ```
 
-
 ## Custom Examples
-
-
-Custom examples define by format json or yaml. Samples locate in folder ``samples``.
+Custom examples are described in **json** or **yaml**. See ``samples`` directory.
 
 ### Elements
 
-
 #### ``array_items_count``
-
-Declares count of elements in all arrays. Set value from 1 to 5. Default: 2.
+Number of elements in all arrays. Set from 1 to 5. Default: 2.
 
 #### ``definitions``
-
-Declares examples for fields in definitions schemas.
-Key is definition reference path, value is object, where key is field name and value is example:
+Bind fields to examples by definition schemas.
+Key is a definition reference path, value is an object (key is a field name and value is an example):
 
 ``json``
-
 ```javascript
 "definitions": {
     "#/definitions/Media": {
@@ -81,9 +64,7 @@ Key is definition reference path, value is object, where key is field name and v
 }
 ```
 
-
 ``yaml``
-
 ```yaml
 definitions:
     '#/definitions/Media':
@@ -97,12 +78,10 @@ definitions:
 
 
 #### ``paths``
-
-Declares examples for fields in operations.
-Necessary set path, method, section (parameters or responses) and field name
+Bind operation fields to examples by path.
+Should define path, method, section (parameters or responses) and field name
 
 ``json``
-
 ```javascript
 "paths": {
     "/users/{user-id}/relationship": {
@@ -123,9 +102,7 @@ Necessary set path, method, section (parameters or responses) and field name
 }
 ```
 
-
 ``yaml``
-
 ```yaml
 paths:
     /users/{user-id}/relationship:
@@ -139,13 +116,10 @@ paths:
                 200.data.user_name: kevin
 ```
 
-
 #### ``types``
+Define examples for primitive types. 
 
-
-Declare examples for primitive types.
-Available types:
-
+Supported types:
 - string
 - date
 - date-time
@@ -154,7 +128,6 @@ Available types:
 - boolean
 
 ``json``
-
 ```javascript
 "types": {
     "string": "value",
@@ -166,9 +139,7 @@ Available types:
 }
 ```
 
-
 ``yaml``
-
 ```yaml
 types:
     string: value
@@ -179,19 +150,12 @@ types:
     boolean: false
 ```
 
-
-## Example Priorities
-
-
-If field is matched to several examples, following priority rules apply
-
-1. Example from operation
-2. Example from definitions.
-
-    If schema has nested schemas, priority is an example of description with the maximum,
-
-    For example definition ``Media`` has nested schema ``MiniProfile``.
-    For field ``user_name`` in object ``likes`` for ``Media`` instance priority example is
-    ``#/definitions/Media/likes.data.user_name`` rather than ``#/definitions/MiniProfile/user_name``
-
-3. Example from primitive types
+## Examples priorities
+If a field has several examples, the following priority rules apply
+1. Example from operation.
+2. Example from definitions.  
+    If a schema has nested schemas, the priority is given to an example from a most descriptive.  
+    E.g.: ``Media`` has nested schema ``MiniProfile``.  For ``user_name`` in ``likes`` 
+    in ``Media`` an example will be taken from ``#/definitions/Media/likes.data.user_name`` rather 
+    than from ``#/definitions/MiniProfile/user_name``.
+3. Example from primitive types.
