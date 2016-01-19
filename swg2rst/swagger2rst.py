@@ -31,6 +31,9 @@ def main(from_script=True):
     parser.add_argument(
         '-d', '--destination-path', type=str, help='Folder for saving file')
     parser.add_argument(
+        '-r', '--result-filename', type=str,
+        help='Result filename (by default generated from the path)')
+    parser.add_argument(
         '-t', '--template', type=str, help='Path to custom template file')
     parser.add_argument(
         '-e', '--examples', type=str, help='Path to custom examples file (yaml or json)')
@@ -92,7 +95,11 @@ def main(from_script=True):
         except TemplateError as err:
             sys.exit(u'Template Error: {}'.format(err.message))
 
-    result_filename = from_stdin and 'doc' or args.path.split('/')[-1].split('.')[0]
+    if args.result_filename:
+        result_filename = args.output_filename
+    else:
+        result_filename = from_stdin and 'doc' or args.path.split('/')[-1].split('.')[0]
+
     try:
         rst_doc = template.render(
             doc=swagger_doc, filename=result_filename, inline=args.inline)
