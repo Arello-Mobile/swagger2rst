@@ -13,16 +13,15 @@ Required arguments:
 - ``--format (-f)`` - output file format. Currenty only "rst" is supported (required)
 
 Options:
-- ``--destination-path (-d)`` - directory to save files into
-- ``--result-filename (-r)`` - result filename (default: generated from the path)
+- ``--output (-o)`` - output filename (default: stdout)
 - ``--template (-t)`` - custom template file path (default: templates/basic.<format>)
 - ``--examples(-e)`` - custom examples definitions file path ("json" or "yaml")
 - ``--inline (-i)`` - put schema definitions in paths, otherwise in a separate ``Data Structures`` section
 
 Example:
 ```bash
-> swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/
-> swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/ -e /home/user/examples.yaml
+> swg2rst samples/swagger.json -f rst -o /home/user/rst_docs/swagger.rst
+> swg2rst samples/swagger.json -f rst -o /home/user/rst_docs/swagger.rst -e /home/user/examples.yaml
 > cat docs/swagger.json | swg2rst -f rst -t templates/custom.rst | grep /api
 ```
 
