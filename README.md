@@ -1,5 +1,7 @@
 # Swagger to .rst Converter
 
+[![Build Status](https://travis-ci.org/Arello-Mobile/swagger2rst.svg?branch=master)](https://travis-ci.org/Arello-Mobile/swagger2rst)
+
 ## Install
 ```bash
 pip install swagger2rst
