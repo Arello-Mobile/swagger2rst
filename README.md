@@ -159,7 +159,9 @@ types:
 ```
 
 ## Examples priorities
+
 If a field has several examples, the following priority rules apply
+
 1. Example from operation.
 2. Example from definitions.
     If a schema has nested schemas, the priority is given to an example from a most descriptive.

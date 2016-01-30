@@ -1,10 +1,12 @@
 # coding: utf-8
+import os
 from setuptools import setup, find_packages
 
+long_description = open('README.rst' if os.path.exists('README.rst') else 'README.md').read()
 
 setup(
     name='swagger2rst',
-    version='0.0.2',
+    version='0.0.3',
     packages=find_packages(),
     license='MIT',
     description='Tool for convert "Swagger" format file to "Restructured text"',
@@ -13,7 +15,7 @@ setup(
     install_requires=open('requirements.txt').read(),
     include_package_data=True,
     test_suite='swg2rst.test',
-    long_description=open('README.md').read(),
+    long_description=long_description,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
