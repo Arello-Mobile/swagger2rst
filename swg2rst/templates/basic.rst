@@ -4,8 +4,6 @@
 .. toctree::
     :maxdepth: 3
 
-    {{ filename }}
-
 {% if doc.info['description'] %}
 
 {{ 'Description'|header(2) }}

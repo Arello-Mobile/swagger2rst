@@ -92,11 +92,8 @@ def main(from_script=True):
         except TemplateError as err:
             sys.exit(u'Template Error: {}'.format(err.message))
 
-    result_filename = args.output or '<stdout>'
-
     try:
-        rst_doc = template.render(
-            doc=swagger_doc, filename=result_filename, inline=args.inline)
+        rst_doc = template.render(doc=swagger_doc, inline=args.inline)
     except (ConverterError, TemplateError) as err:
         status = err
         if isinstance(err, TemplateError):
@@ -106,9 +103,8 @@ def main(from_script=True):
     if args.output:
         with codecs.open(args.output, mode='w', encoding='utf-8') as f:
             f.write(rst_doc)
-            print('\n\nResult saved to %s' % os.path.abspath(args.output))
     else:
-        print(rst_doc)
+        sys.stdout.write(rst_doc)
 
 
 def _parse_file(_file):
