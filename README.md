@@ -13,15 +13,15 @@ Required arguments:
 - ``--format (-f)`` - output file format. Currenty only "rst" is supported (required)
 
 Options:
-- ``--destination-path (-d)`` - directory to save files into
+- ``--output (-o)`` - output filename (default: stdout)
 - ``--template (-t)`` - custom template file path (default: templates/basic.<format>)
 - ``--examples(-e)`` - custom examples definitions file path ("json" or "yaml")
 - ``--inline (-i)`` - put schema definitions in paths, otherwise in a separate ``Data Structures`` section
 
 Example:
 ```bash
-> swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/
-> swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/ -e /home/user/examples.yaml
+> swg2rst samples/swagger.json -f rst -o /home/user/rst_docs/swagger.rst
+> swg2rst samples/swagger.json -f rst -o /home/user/rst_docs/swagger.rst -e /home/user/examples.yaml
 > cat docs/swagger.json | swg2rst -f rst -t templates/custom.rst | grep /api
 ```
 
@@ -117,7 +117,7 @@ paths:
 ```
 
 #### ``types``
-Define examples for primitive types. 
+Define examples for primitive types.
 
 Supported types:
 - string
@@ -153,9 +153,9 @@ types:
 ## Examples priorities
 If a field has several examples, the following priority rules apply
 1. Example from operation.
-2. Example from definitions.  
-    If a schema has nested schemas, the priority is given to an example from a most descriptive.  
-    E.g.: ``Media`` has nested schema ``MiniProfile``.  For ``user_name`` in ``likes`` 
-    in ``Media`` an example will be taken from ``#/definitions/Media/likes.data.user_name`` rather 
+2. Example from definitions.
+    If a schema has nested schemas, the priority is given to an example from a most descriptive.
+    E.g.: ``Media`` has nested schema ``MiniProfile``.  For ``user_name`` in ``likes``
+    in ``Media`` an example will be taken from ``#/definitions/Media/likes.data.user_name`` rather
     than from ``#/definitions/MiniProfile/user_name``.
 3. Example from primitive types.

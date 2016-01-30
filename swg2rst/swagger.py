@@ -20,7 +20,8 @@ _DEFAULT_EXAMPLES = {
     'string': 'somestring',
     'date': '2015-01-01',
     'date-time': '2015-01-01T15:00:00.000Z',
-    'boolean': True
+    'boolean': True,
+    'password': '*****',
 }
 
 #: json validation schema for examples file
@@ -731,7 +732,7 @@ class AbstractTypeObject(object):
         self.raw = obj
         self.name = name
         self.root = root
-    
+
     def get_type_properties(self, property_obj, name):
         """ Get internal properties of property
 

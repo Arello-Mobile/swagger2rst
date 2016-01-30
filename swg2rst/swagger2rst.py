@@ -27,9 +27,9 @@ def main(from_script=True):
         parser.add_argument(
             'path', metavar='path', type=str, help='Path to swagger file')
     parser.add_argument(
-        '-f', '--format', type=str, help='Format output doc file (rst)', required=True)
+        '-f', '--format', type=str, help='Format output doc file (rst)', default='rst')
     parser.add_argument(
-        '-d', '--destination-path', type=str, help='Folder for saving file')
+        '-o', '--output', type=str, help='Output filename (default: stdout')
     parser.add_argument(
         '-t', '--template', type=str, help='Path to custom template file')
     parser.add_argument(
@@ -92,7 +92,8 @@ def main(from_script=True):
         except TemplateError as err:
             sys.exit(u'Template Error: {}'.format(err.message))
 
-    result_filename = from_stdin and 'doc' or args.path.split('/')[-1].split('.')[0]
+    result_filename = args.output or '<stdout>'
+
     try:
         rst_doc = template.render(
             doc=swagger_doc, filename=result_filename, inline=args.inline)
@@ -102,19 +103,13 @@ def main(from_script=True):
             status = 'Template Error: {}'.format(err)
         sys.exit(status)
 
-    if args.destination_path:
-        result_file_path = '{}/{}.{}'.format(
-            os.path.normpath(args.destination_path),
-            result_filename,
-            args.format
-        )
-
-        with codecs.open(result_file_path, mode='w', encoding='utf-8') as f:
+    if args.output:
+        with codecs.open(args.output, mode='w', encoding='utf-8') as f:
             f.write(rst_doc)
-            print('\n\nResult saved to %s' % os.path.abspath(result_file_path))
-
+            print('\n\nResult saved to %s' % os.path.abspath(args.output))
     else:
         print(rst_doc)
+
 
 def _parse_file(_file):
     try:
