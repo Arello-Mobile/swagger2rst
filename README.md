@@ -50,16 +50,18 @@ Bind fields to examples by definition schemas.
 Key is a definition reference path, value is an object (key is a field name and value is an example):
 
 ``json``
-```javascript
-"definitions": {
-    "#/definitions/Media": {
-        "likes.count": 10,
-        "likes.data.user_name": "liked_user",
-        "user.user_name": "my_login"
-    },
-    "#/definitions/MiniProfile": {
-        "user_name": "some_login",
-        "full_name": "John Smith"
+```json
+{
+    "definitions": {
+        "#/definitions/Media": {
+            "likes.count": 10,
+            "likes.data.user_name": "liked_user",
+            "user.user_name": "my_login"
+        },
+        "#/definitions/MiniProfile": {
+            "user_name": "some_login",
+            "full_name": "John Smith"
+        }
     }
 }
 ```
@@ -82,19 +84,21 @@ Bind operation fields to examples by path.
 Should define path, method, section (parameters or responses) and field name
 
 ``json``
-```javascript
-"paths": {
-    "/users/{user-id}/relationship": {
-        "post": {
-            "parameters": {
-                "action": "approve"
-            },
-            "responses": {
-                "200.data": {
-                    "profile_picture": "picture",
-                    "full_name": "Kevin Jones",
-                    "id": 10,
-                    "user_name": "kevin"
+```json
+{
+    "paths": {
+        "/users/{user-id}/relationship": {
+            "post": {
+                "parameters": {
+                    "action": "approve"
+                },
+                "responses": {
+                    "200.data": {
+                        "profile_picture": "picture",
+                        "full_name": "Kevin Jones",
+                        "id": 10,
+                        "user_name": "kevin"
+                    }
                 }
             }
         }
@@ -128,14 +132,16 @@ Supported types:
 - boolean
 
 ``json``
-```javascript
-"types": {
-    "string": "value",
-    "date": "2000-12-01",
-    "date-time": "2000-12-01T12:00:00.000Z",
-    "number": 1.2,
-    "integer": 5,
-    "boolean": false
+```json
+{
+    "types": {
+        "string": "value",
+        "date": "2000-12-01",
+        "date-time": "2000-12-01T12:00:00.000Z",
+        "number": 1.2,
+        "integer": 5,
+        "boolean": false
+    }
 }
 ```
 
