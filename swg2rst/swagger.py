@@ -175,7 +175,7 @@ class Exampilator(object):
 
     @classmethod
     def string_example(cls, properties, type_format):
-        result = cls.DEFAULT_EXAMPLES[type_format or 'string']
+        result = cls.DEFAULT_EXAMPLES['string']
         if properties.get('min_length'):
             result.ljust(properties['min_length'], 'a')
         if properties.get('max_length'):
@@ -868,7 +868,7 @@ class Response(AbstractTypeObject):
 
     def __init__(self, obj, **kwargs):
         super(Response, self).__init__(obj, **kwargs)
-        self.description = obj['description']
+        self.description = obj.get('description')
         self.examples = obj.get('examples')
 
         if 'schema' in obj:
