@@ -24,7 +24,7 @@ def main(from_script=True):
         description='Convert "Swagger" format file to "Restructured text"')
 
     parser.add_argument(
-            'path', metavar='path', type=str, help='Path to swagger file or set
+            'path', metavar='path', type=str, help='Path to swagger file or set\
             it "-" and using pipelining')
     parser.add_argument(
         '-f', '--format', type=str, help='Format output doc file (rst)', default='rst')
