@@ -23,9 +23,9 @@ def main(from_script=True):
     parser = argparse.ArgumentParser(
         description='Convert "Swagger" format file to "Restructured text"')
 
-    if not from_stdin:
-        parser.add_argument(
-            'path', metavar='path', type=str, help='Path to swagger file')
+    parser.add_argument(
+            'path', metavar='path', type=str, help='Path to swagger file or set
+            it "-" and using pipelining')
     parser.add_argument(
         '-f', '--format', type=str, help='Format output doc file (rst)', default='rst')
     parser.add_argument(
@@ -47,14 +47,14 @@ def main(from_script=True):
 
     doc_module = importlib.import_module('swg2rst.utils.{}'.format(args.format))
 
-    _file = sys.stdin if from_stdin else _open_file(args.path)
+    _file = sys.stdin if args.path == '-' else _open_file(args.path)
 
     try:
         doc = _parse_file(_file)
     except ValueError:
         sys.exit('Invalid file format. File must be in "yaml" or "json" format.')
     finally:
-        if not from_stdin:
+        if args.path != '-':
             _file.close()
 
     if doc is None:
