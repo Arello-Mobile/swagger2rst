@@ -175,7 +175,7 @@ class Exampilator(object):
 
     @classmethod
     def string_example(cls, properties, type_format):
-        result = cls.DEFAULT_EXAMPLES['string']
+        result = cls.DEFAULT_EXAMPLES[type_format or 'string']
         if properties.get('min_length'):
             result.ljust(properties['min_length'], 'a')
         if properties.get('max_length'):
