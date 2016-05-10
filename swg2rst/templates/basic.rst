@@ -192,7 +192,11 @@
 .. code-block:: javascript
 
             {% for header in headers %}
+                {% if header.properties %}
     {{ '{}: {}'.format(header.name, header.properties['default']) }}
+                {% else %}
+    {{ '{}: {}'.format(header.name, header.description) }}
+                {% endif %}
             {% endfor %}
 
         {% endif %}
