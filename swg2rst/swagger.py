@@ -179,7 +179,7 @@ class Exampilator(object):
             result = cls.DEFAULT_EXAMPLES[type_format]
         else:
             result = cls.DEFAULT_EXAMPLES['string']
-            
+
         if properties.get('min_length'):
             result.ljust(properties['min_length'], 'a')
         if properties.get('max_length'):
@@ -464,8 +464,9 @@ class SchemaObjects(object):
 
         schema = cls.get(_type)
         if schema.all_of:
-            models = ', '.join(map(
-                partial(cls.get_type_description, *args, **kwargs), schema.all_of))
+            models = ', '.join(
+                ( cls.get_type_description(_type, *args, **kwargs) for _type in schema.all_of )
+            )
             result = '({})'.format(models)
         elif schema.is_array:
             result = 'array of {}'.format(
