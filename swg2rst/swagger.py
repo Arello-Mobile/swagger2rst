@@ -479,13 +479,23 @@ class SchemaObjects(object):
 
     @classmethod
     def merge_schemas(cls, schema, _schema):
-        """Return new scheme which consist of args
-        (and not create it)
+        """Return second Schema, which is extended by first Schema
+        https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#composition-and-inheritance-polymorphism
         """
-        assert isinstance(schema, Schema)
-        assert isinstance(_schema, Schema)
-        _schema.properties += schema.properties
-
+        assert  schema._type == 'object'
+        assert _schema._type == 'object'
+        tmp = schema.properties[:] # copy
+        prop = {}
+        to_dict = lambda e: prop.update({e.pop('name'): e})
+        map(to_dict, tmp)
+        for _prop in _schema.properties:
+            if prop.get(_prop['name']):
+                prop.pop(_prop['name'])
+        if prop:
+            for k, v in prop.items():
+                v['name'] = k
+                _schema.properties.append(v)
+        d = _schema.properties
         return _schema
 
 
@@ -961,7 +971,7 @@ class Schema(AbstractTypeObject):
         if self._type in PRIMITIVE_TYPES:
             self.properties = [{
                 'name': kwargs.get('name', ''),
-                'description': '',
+                'description': obj.get('description', ''),
                 'required': obj.get('required', False),
                 'type': self.type,
                 'type_format': self.type_format,

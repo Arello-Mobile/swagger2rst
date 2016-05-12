@@ -53,7 +53,8 @@
     {% if not schema.is_array %}
         {% if (not inline and schema.is_inline) or (inline and schema_id not in exists_schema) %}
 
-            {% set schema_header = '**{} schema:**'.format(schema.name) %}
+            {% set schema_header = '**Result schema:**' %}
+            {# set schema_header = '**{} schema:**'.format(schema.name) #}
             {% include "schema.rst"%}
 
         {% endif %}
