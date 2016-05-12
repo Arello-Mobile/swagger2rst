@@ -504,6 +504,7 @@ class SchemaObjects(object):
         _schema.properties += schema.properties
         return _schema
 
+
 class SecurityMixin(object):
 
     security = None
@@ -1036,8 +1037,7 @@ class Schema(AbstractTypeObject):
             self.properties.append(_obj)
 
     def _after_create_schema(self, schema):
-        if not self.is_array:
-            self.nested_schemas |= schema.nested_schemas
+        pass
 
     @property
     def is_inline(self):
