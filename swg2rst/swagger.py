@@ -480,6 +480,10 @@ class SchemaObjects(object):
         return result
 
     @classmethod
+    def get_additional_properties(cls, _type, *args, **kwargs):
+        return repr(_type), repr(args), repr(kwargs)
+
+    @classmethod
     def merge_schemas(cls, schema, _schema):
         """Return second Schema, which is extended by first Schema
         https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#composition-and-inheritance-polymorphism
@@ -808,6 +812,9 @@ class AbstractTypeObject(object):
 
         if 'enum' in property_obj:
             property_dict['enum'] = property_obj['enum']
+
+        if 'properties' in property_obj:
+            property_dict['additionalProperties'] = property_obj['properties']
 
         return property_type, property_format, property_dict
 

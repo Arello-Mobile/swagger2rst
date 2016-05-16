@@ -39,7 +39,7 @@
 
 {% else %}
 
-{{ 'Any object ({})' }}
+{{ doc.get_additional_properties(schema.schema_id) }}
 
 {% endif %}
 
