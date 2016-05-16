@@ -48,30 +48,13 @@
 {% endif %}
 
 {% for schema_id in schema.nested_schemas %}
-
     {% set schema = doc.schemas.get(schema_id) %}
     {% if not schema.is_array %}
         {% if (not inline and schema.is_inline) or (inline and schema_id not in exists_schema) %}
+            {% set schema_header = '**{} schema:**'.format(schema.name) %}
 
-            {% set schema_header = '**Result schema:**' %}
-            {# set schema_header = '**{} schema:**'.format(schema.name) #}
-            {% include "schema.rst"%}
+{% include "schema.rst"%}
 
         {% endif %}
-    {% else %}
-        {% for schema_id in schema.nested_schemas %}
-
-            {% set schema = doc.schemas.get(schema_id) %}
-            {% if not schema.is_array %}
-                {% if (not inline and schema.is_inline) or (inline and schema_id not in exists_schema) %}
-
-                    {% set schema_header = '**{} schema:**'.format(schema.name) %}
-                    {% include "schema.rst"%}
-
-                {% endif %}
-            {% endif %}
-
-        {% endfor %}
     {% endif %}
-
 {% endfor %}

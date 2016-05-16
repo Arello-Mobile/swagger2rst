@@ -464,10 +464,12 @@ class SchemaObjects(object):
 
         schema = cls.get(_type)
         if schema.all_of:
-            models = ', '.join(
+            models = ','.join(
                 ( cls.get_type_description(_type, *args, **kwargs) for _type in schema.all_of )
             )
-            result = '({})'.format(models)
+            result = '{}'.format(models.split(',')[0])
+            for r in models.split(',')[1:]:
+                result += ' extended {}'.format(r)
         elif schema.is_array:
             result = 'array of {}'.format(
                 cls.get_type_description(schema.item['type'], *args, **kwargs))
