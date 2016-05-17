@@ -481,7 +481,8 @@ class SchemaObjects(object):
 
     @classmethod
     def get_additional_properties(cls, _type, *args, **kwargs):
-        return repr(_type), repr(args), repr(kwargs)
+        result = cls.get(_type)
+        return 'Map of :ref:`{} <{}>` '.format(result.name, result.ref_path)
 
     @classmethod
     def merge_schemas(cls, schema, _schema):
@@ -501,7 +502,7 @@ class SchemaObjects(object):
             for k, v in prop.items():
                 v['name'] = k
                 _schema.properties.append(v)
-        d = _schema.properties
+        #d = _schema.properties
         return _schema
 
 
@@ -813,8 +814,9 @@ class AbstractTypeObject(object):
         if 'enum' in property_obj:
             property_dict['enum'] = property_obj['enum']
 
-        if 'properties' in property_obj:
-            property_dict['additionalProperties'] = property_obj['properties']
+        if 'additionalProperties' in property_obj:
+            if '$ref' in property_obj['additionalProperties']:
+                property_dict['$ref'] = self._get_object_schema_id(property_obj['additionalProperties'], None)
 
         return property_type, property_format, property_dict
 
@@ -842,10 +844,6 @@ class AbstractTypeObject(object):
         """
         schema_id = self._get_object_schema_id(schema_obj, SchemaTypes.INLINE)
 
-        # TODO:
-        if schema_obj.get('additionalProperties'):
-            self._type = 'object'
-            return
         if not SchemaObjects.contains(schema_id):
             schema = SchemaObjects.create_schema(
                 schema_obj, self.name, SchemaTypes.INLINE, root=self.root)
@@ -1029,7 +1027,6 @@ class Schema(AbstractTypeObject):
     def _set_properties(self):
         self.properties = []
         required_fields = self.raw.get('required', [])
-
         for name, property_obj in self.raw['properties'].items():
 
             property_type, property_format, prop = self.get_type_properties(property_obj, name)
@@ -1049,6 +1046,11 @@ class Schema(AbstractTypeObject):
                 _obj['description'] = property_obj['description'].replace('"', '\'')
 
             self.properties.append(_obj)
+
+        for p in self.properties:
+            if '$ref' in p['type_properties']:
+                obj = SchemaObjects.get(p['type'])
+                obj.ref_path = p['type_properties']['$ref']
 
     def _after_create_schema(self, schema):
         pass
