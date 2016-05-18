@@ -102,10 +102,12 @@ class SchemaTypes(object):
     """
     INLINE = 'inline'
     DEFINITION = 'definition'
+    MAPPED = 'mapped'
 
     prefixes = {
         INLINE: INLINE[0],
         DEFINITION: DEFINITION[0],
+        MAPPED: MAPPED[0],
     }
 
 
@@ -393,12 +395,15 @@ class SchemaObjects(object):
         :param dict obj: swagger schema object
         :param str name: schema name
         :param str schema_type: schema location.
-            Can be ``inline`` or ``definition``
+            Can be ``inline``, ``definition`` or ``mapped``
         :param BaseSwaggerObject root: root doc
         :return: new schema
         :rtype: Schema
         """
-        schema = Schema(obj, schema_type, name=name, root=root)
+        if schema_type == SchemaTypes.MAPPED:
+            schema = SchemaMapWrapper(obj, name=name, root=root)
+        else:
+            schema = Schema(obj, schema_type, name=name, root=root)
         cls.add_schema(schema)
         return schema
 
@@ -774,7 +779,7 @@ class AbstractTypeObject(object):
         self.name = name
         self.root = root
 
-    def get_type_properties(self, property_obj, name):
+    def get_type_properties(self, property_obj, name, additional_prop=False):
         """ Get internal properties of property
 
         :param dict property_obj: raw property object
@@ -785,10 +790,12 @@ class AbstractTypeObject(object):
         property_type = property_obj.get('type', 'object')
         property_format = property_obj.get('format')
         property_dict = dict()
+        _schema = None
 
         if property_type in ['object', 'array']:
-            schema_id = self._get_object_schema_id(property_obj, SchemaTypes.INLINE)
-            if not ('$ref' in property_obj or SchemaObjects.get(schema_id)):
+            schema_type = SchemaTypes.MAPPED if additional_prop else SchemaTypes.INLINE
+            schema_id = self._get_object_schema_id(property_obj, schema_type)
+            if not ('$ref' in property_obj or SchemaObjects.get(schema_id)) or additional_prop:
                 _schema = SchemaObjects.create_schema(
                     property_obj, name, SchemaTypes.INLINE, root=self.root)
                 self._after_create_schema(_schema)
@@ -815,8 +822,13 @@ class AbstractTypeObject(object):
             property_dict['enum'] = property_obj['enum']
 
         if 'additionalProperties' in property_obj:
-            if '$ref' in property_obj['additionalProperties']:
-                property_dict['$ref'] = self._get_object_schema_id(property_obj['additionalProperties'], None)
+            _property_type, _property_format, _property_dict = self.get_type_properties(
+                property_obj['additionalProperties'], '{}-mapped'.format(name), additional_prop=True)
+            _schema.properties = _schema.properties.update(_property_dict) if _schema.properties else _property_dict
+            if property_type not in PRIMITIVE_TYPES:
+                _schema.ref_path = _property_type
+                self.nested_schemas.add(_property_type)
+            property_dict.update(_property_dict)
 
         return property_type, property_format, property_dict
 
@@ -827,7 +839,11 @@ class AbstractTypeObject(object):
         return m.hexdigest()
 
     def _get_object_schema_id(self, obj, schema_type):
-        if '$ref' in obj:
+        if (schema_type == SchemaTypes.prefixes[SchemaTypes.MAPPED])\
+            and ('$ref' in obj):
+            base = obj['$ref']
+            prefix = schema_type
+        elif ('$ref' in obj):
             base = obj['$ref']
             prefix = SchemaTypes.prefixes[SchemaTypes.DEFINITION]
         else:
@@ -835,18 +851,18 @@ class AbstractTypeObject(object):
             prefix = SchemaTypes.prefixes[schema_type]
         return '{}_{}'.format(prefix, self._get_id(base))
 
-    def set_type_by_schema(self, schema_obj):
+    def set_type_by_schema(self, schema_obj, schema_type):
         """
         Set property type by schema object
         Schema will create, if it doesn't exists in collection
 
         :param dict schema_obj: raw schema object
         """
-        schema_id = self._get_object_schema_id(schema_obj, SchemaTypes.INLINE)
+        schema_id = self._get_object_schema_id(schema_obj, schema_type)
 
         if not SchemaObjects.contains(schema_id):
             schema = SchemaObjects.create_schema(
-                schema_obj, self.name, SchemaTypes.INLINE, root=self.root)
+                schema_obj, self.name, schema_type, root=self.root)
             assert schema.schema_id == schema_id
         self._type = schema_id
 
@@ -886,7 +902,7 @@ class Parameter(AbstractTypeObject):
             else:
                 _, _, self.properties = self.get_type_properties(self.raw, self.name)
         elif 'schema' in self.raw:
-            self.set_type_by_schema(self.raw['schema'])
+            self.set_type_by_schema(self.raw['schema'], SchemaTypes.INLINE)
         else:
             raise ConverterError('Invalid structure')
 
@@ -925,7 +941,7 @@ class Response(AbstractTypeObject):
             self.type_format = self.raw['schema'].get('format')
             _, _, self.properties = self.get_type_properties(self.raw, self.name)
         else:
-            self.set_type_by_schema(self.raw['schema'])
+            self.set_type_by_schema(self.raw['schema'], SchemaTypes.INLINE)
 
 
 class Header(AbstractTypeObject):
@@ -985,7 +1001,7 @@ class Schema(AbstractTypeObject):
                 'type_properties': self.get_type_properties(obj, '')[2],
             }]
 
-        if schema_type != SchemaTypes.INLINE:
+        if schema_type == SchemaTypes.DEFINITION:
             self.ref_path = '#/definitions/{}'.format(self.name)
 
         if self.is_array:
@@ -1028,7 +1044,6 @@ class Schema(AbstractTypeObject):
         self.properties = []
         required_fields = self.raw.get('required', [])
         for name, property_obj in self.raw['properties'].items():
-
             property_type, property_format, prop = self.get_type_properties(property_obj, name)
             if property_type not in PRIMITIVE_TYPES:
                 self.nested_schemas.add(property_type)
@@ -1040,17 +1055,12 @@ class Schema(AbstractTypeObject):
                 'type': property_type,
                 'type_format': property_format,
                 'type_properties': prop,
-
             }
+
             if 'description' in property_obj:
                 _obj['description'] = property_obj['description'].replace('"', '\'')
 
             self.properties.append(_obj)
-
-        for p in self.properties:
-            if '$ref' in p['type_properties']:
-                obj = SchemaObjects.get(p['type'])
-                obj.ref_path = p['type_properties']['$ref']
 
     def _after_create_schema(self, schema):
         pass
@@ -1065,6 +1075,13 @@ class Schema(AbstractTypeObject):
 
     def __repr__(self):
         return self.name
+
+
+class SchemaMapWrapper(Schema):
+    """Dedicated class to store AdditionalProperties in schema
+    """
+    def __init__(self, obj, **kwargs):
+        super(SchemaMapWrapper, self).__init__(obj, SchemaTypes.MAPPED, **kwargs)
 
 
 class SecurityDefinition(object):
