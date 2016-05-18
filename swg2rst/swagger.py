@@ -515,9 +515,12 @@ class SchemaObjects(object):
         if schema.nested_schemas:
             for sch in schema.nested_schemas:
                 nested_schema = cls.get(sch)
-                body.append(':ref:`{} <{}>`\n'.format(nested_schema.name, nested_schema.schema_id))
-                if nested_schema.properties and isinstance(nested_schema, SchemaMapWrapper):
-                    body.append(cls.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
+                body.append(cls.get_type_description(nested_schema.schema_id, *args, **kwargs) + '\n\n')
+                if isinstance(nested_schema, SchemaMapWrapper):
+                    if nested_schema.item:
+                        body.append(cls.get_type_description(nested_schema.item['type'], *args, **kwargs))
+                    else:
+                        body.append(cls.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
         return head + ''.join(body)
 
     @classmethod
