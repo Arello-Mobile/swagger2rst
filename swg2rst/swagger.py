@@ -470,7 +470,7 @@ class SchemaObjects(object):
         schema = cls.get(_type)
         if schema.all_of:
             models = ','.join(
-                ( cls.get_type_description(_type, *args, **kwargs) for _type in schema.all_of )
+                (cls.get_type_description(_type, *args, **kwargs) for _type in schema.all_of)
             )
             result = '{}'.format(models.split(',')[0])
             for r in models.split(',')[1:]:
@@ -486,8 +486,15 @@ class SchemaObjects(object):
 
     @classmethod
     def get_additional_properties(cls, _type, *args, **kwargs):
-        result = cls.get(_type)
-        return 'Map of :ref:`{} <{}>` '.format(result.name, result.ref_path)
+        schema = cls.get(_type)
+        # link = '.. _i_65ee0248eafa0d637832fa3e8d9d388f:'
+        link = '.. _{}:\n\n\n'.format(schema.schema_id)
+        result = []
+        if schema.nested_schemas:
+            for sch in schema.nested_schemas:
+                nested_schema = cls.get(sch)
+                result.append(':ref:`{} <{}>`\n'.format(nested_schema.name, nested_schema.schema_id))
+        return link + ', '.join(result)
 
     @classmethod
     def merge_schemas(cls, schema, _schema):
@@ -507,7 +514,7 @@ class SchemaObjects(object):
             for k, v in prop.items():
                 v['name'] = k
                 _schema.properties.append(v)
-        #d = _schema.properties
+        # d = _schema.properties
         return _schema
 
 
@@ -795,9 +802,10 @@ class AbstractTypeObject(object):
         if property_type in ['object', 'array']:
             schema_type = SchemaTypes.MAPPED if additional_prop else SchemaTypes.INLINE
             schema_id = self._get_object_schema_id(property_obj, schema_type)
-            if not ('$ref' in property_obj or SchemaObjects.get(schema_id)) or additional_prop:
+            # if not ('$ref' in property_obj or SchemaObjects.get(schema_id)) or additional_prop:
+            if not ('$ref' in property_obj or SchemaObjects.get(schema_id)):
                 _schema = SchemaObjects.create_schema(
-                    property_obj, name, SchemaTypes.INLINE, root=self.root)
+                    property_obj, name, schema_type, root=self.root)
                 self._after_create_schema(_schema)
             property_type = schema_id
 
@@ -824,10 +832,10 @@ class AbstractTypeObject(object):
         if 'additionalProperties' in property_obj:
             _property_type, _property_format, _property_dict = self.get_type_properties(
                 property_obj['additionalProperties'], '{}-mapped'.format(name), additional_prop=True)
-            _schema.properties = _schema.properties.update(_property_dict) if _schema.properties else _property_dict
-            if property_type not in PRIMITIVE_TYPES:
-                _schema.ref_path = _property_type
-                self.nested_schemas.add(_property_type)
+            # _schema.properties = _schema.properties.update(_property_dict) if _schema.properties else _property_dict
+            if _property_type not in PRIMITIVE_TYPES:
+                _schema.nested_schemas.add(_property_type)
+
             property_dict.update(_property_dict)
 
         return property_type, property_format, property_dict
