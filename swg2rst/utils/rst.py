@@ -17,7 +17,12 @@ class SwaggerObject(BaseSwaggerObject):
         kwargs['post_callback'] = self._post_process_description
         return self.schemas.get_type_description(_type, *args, **kwargs)
 
+    def get_regular_properties(self, _type, *args, **kwargs):
+        kwargs['post_callback'] = self._post_process_description
+        return self.schemas.get_regular_properties(_type, *args, **kwargs)
+
     def get_additional_properties(self, _type, *args, **kwargs):
+        kwargs['post_callback'] = self._post_process_description
         return self.schemas.get_additional_properties(_type, *args, **kwargs)
 
     @staticmethod

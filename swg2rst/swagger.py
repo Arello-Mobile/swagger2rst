@@ -457,6 +457,28 @@ class SchemaObjects(object):
         cls._schemas = dict()
 
     @classmethod
+    def get_regular_properties(cls, _type, *args, **kwargs):
+        schema = cls.get(_type)
+        head = """
+.. csv-table::
+    :delim: |
+    :header: "Name", "Required", "Type", "Format", "Properties", "Description"
+    :widths: 20, 10, 15, 15, 30, 25
+
+"""
+        body = ''
+        for p in schema.properties:
+            body += '        {} | {} | {} | {} | {} | {} \n'.format(
+                p['name'],
+                'Yes' if p['required'] else 'No',
+                cls.get_type_description(p['type'], *args, **kwargs),
+                p['type_format'] or '',
+                '{}'.format(p['type_properties']) if p['type_properties'] else '',
+                p['description']
+            )
+        return head + body
+
+    @classmethod
     def get_type_description(cls, _type, *args, **kwargs):
         """ Get description of type
 
@@ -488,13 +510,15 @@ class SchemaObjects(object):
     def get_additional_properties(cls, _type, *args, **kwargs):
         schema = cls.get(_type)
         # link = '.. _i_65ee0248eafa0d637832fa3e8d9d388f:'
-        link = '.. _{}:\n\n\n'.format(schema.schema_id)
-        result = []
+        head = '.. _{}:\n\n\n'.format(schema.schema_id)
+        body = []
         if schema.nested_schemas:
             for sch in schema.nested_schemas:
                 nested_schema = cls.get(sch)
-                result.append(':ref:`{} <{}>`\n'.format(nested_schema.name, nested_schema.schema_id))
-        return link + ', '.join(result)
+                body.append(':ref:`{} <{}>`\n'.format(nested_schema.name, nested_schema.schema_id))
+                if nested_schema.properties and isinstance(nested_schema, SchemaMapWrapper):
+                    body.append(cls.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
+        return head + ''.join(body)
 
     @classmethod
     def merge_schemas(cls, schema, _schema):
@@ -832,11 +856,9 @@ class AbstractTypeObject(object):
         if 'additionalProperties' in property_obj:
             _property_type, _property_format, _property_dict = self.get_type_properties(
                 property_obj['additionalProperties'], '{}-mapped'.format(name), additional_prop=True)
-            # _schema.properties = _schema.properties.update(_property_dict) if _schema.properties else _property_dict
             if _property_type not in PRIMITIVE_TYPES:
                 _schema.nested_schemas.add(_property_type)
-
-            property_dict.update(_property_dict)
+            property_dict['additionalProperties'] = _property_dict
 
         return property_type, property_format, property_dict
 
