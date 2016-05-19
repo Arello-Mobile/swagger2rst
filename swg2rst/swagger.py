@@ -469,12 +469,12 @@ class SchemaObjects(object):
         body = ''
         for p in schema.properties:
             body += '        {} | {} | {} | {} | {} | {} \n'.format(
-                p.get('name', ''),
+                p.get('name') or '',
                 'Yes' if p.get('required') else 'No',
                 cls.get_type_description(p['type'], *args, **kwargs),
-                p.get('type_format', ''),
-                '{}'.format(p.get('type_properties', '')),
-                p.get('description', '')
+                p.get('type_format') or '',
+                '{}'.format(p.get('type_properties') or ''),
+                p.get('description') or ''
             )
         return head + body
 
