@@ -469,12 +469,12 @@ class SchemaObjects(object):
         body = ''
         for p in schema.properties:
             body += '        {} | {} | {} | {} | {} | {} \n'.format(
-                p['name'],
-                'Yes' if p['required'] else 'No',
+                p.get('name', ''),
+                'Yes' if p.get('required') else 'No',
                 cls.get_type_description(p['type'], *args, **kwargs),
-                p['type_format'] or '',
-                '{}'.format(p['type_properties']) if p['type_properties'] else '',
-                p['description']
+                p.get('type_format', ''),
+                '{}'.format(p.get('type_properties', '')),
+                p.get('description', '')
             )
         return head + body
 
@@ -521,6 +521,8 @@ class SchemaObjects(object):
                         body.append(cls.get_type_description(nested_schema.item['type'], *args, **kwargs))
                     else:
                         body.append(cls.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
+        elif schema.type_format:
+            body.append(cls.get_type_description(schema.type_format, *args, **kwargs))
         return head + ''.join(body)
 
     @classmethod
@@ -861,6 +863,9 @@ class AbstractTypeObject(object):
                 property_obj['additionalProperties'], '{}-mapped'.format(name), additional_prop=True)
             if _property_type not in PRIMITIVE_TYPES:
                 _schema.nested_schemas.add(_property_type)
+            else:
+                _schema.type_format = _property_type
+
             property_dict['additionalProperties'] = _property_dict
 
         return property_type, property_format, property_dict
