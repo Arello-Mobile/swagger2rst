@@ -517,8 +517,10 @@ class SchemaObjects(object):
                 nested_schema = cls.get(sch)
                 body.append(cls.get_type_description(nested_schema.schema_id, *args, **kwargs) + '\n\n')
                 if isinstance(nested_schema, SchemaMapWrapper):
-                    if nested_schema.item:
-                        body.append(cls.get_type_description(nested_schema.item['type'], *args, **kwargs))
+                    if nested_schema.item and nested_schema.item.get('type'):
+                        if (nested_schema.item['type'] not in PRIMITIVE_TYPES)\
+                                and (nested_schema.item['type'][0] != SchemaTypes.DEFINITION[0]):
+                            body.append(cls.get_regular_properties(nested_schema.item['type'], *args, **kwargs))
                     else:
                         body.append(cls.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
         elif schema.type_format:
