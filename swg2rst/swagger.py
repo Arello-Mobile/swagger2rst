@@ -504,6 +504,7 @@ class SchemaObjects(object):
             result = schema.name
             if kwargs.get('post_callback'):
                 result = kwargs['post_callback'](result, schema, *args, **kwargs)
+
         return result
 
     @classmethod
@@ -515,7 +516,7 @@ class SchemaObjects(object):
         if schema.nested_schemas:
             for sch in schema.nested_schemas:
                 nested_schema = cls.get(sch)
-                body.append(cls.get_type_description(nested_schema.schema_id, *args, **kwargs) + '\n\n')
+                body.append('Map of {{"string":"{}"}}\n\n'.format(cls.get_type_description(nested_schema.schema_id, *args, **kwargs)))
                 if isinstance(nested_schema, SchemaMapWrapper):
                     if nested_schema.item and nested_schema.item.get('type'):
                         if (nested_schema.item['type'] not in PRIMITIVE_TYPES)\
@@ -524,7 +525,7 @@ class SchemaObjects(object):
                     else:
                         body.append(cls.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
         elif schema.type_format:
-            body.append(cls.get_type_description(schema.type_format, *args, **kwargs))
+            body.append('Map of {{"string":"{}"}}'.format(cls.get_type_description(schema.type_format, *args, **kwargs)))
         return head + ''.join(body)
 
     @classmethod
@@ -833,7 +834,6 @@ class AbstractTypeObject(object):
         if property_type in ['object', 'array']:
             schema_type = SchemaTypes.MAPPED if additional_prop else SchemaTypes.INLINE
             schema_id = self._get_object_schema_id(property_obj, schema_type)
-            # if not ('$ref' in property_obj or SchemaObjects.get(schema_id)) or additional_prop:
             if not ('$ref' in property_obj or SchemaObjects.get(schema_id)):
                 _schema = SchemaObjects.create_schema(
                     property_obj, name, schema_type, root=self.root)
@@ -867,8 +867,6 @@ class AbstractTypeObject(object):
                 _schema.nested_schemas.add(_property_type)
             else:
                 _schema.type_format = _property_type
-
-            property_dict['additionalProperties'] = _property_dict
 
         return property_type, property_format, property_dict
 
@@ -1054,7 +1052,6 @@ class Schema(AbstractTypeObject):
                 self.nested_schemas.add(self.item['type'])
 
         if 'properties' in obj:
-            # self.example = dict()
             self._set_properties()
 
         if 'allOf' in obj:
@@ -1123,6 +1120,9 @@ class SchemaMapWrapper(Schema):
     def __init__(self, obj, **kwargs):
         super(SchemaMapWrapper, self).__init__(obj, SchemaTypes.MAPPED, **kwargs)
 
+    @staticmethod
+    def wrap(schema):
+        schema.__class__ = SchemaMapWrapper
 
 class SecurityDefinition(object):
     """ Represents Swagger Security Scheme Object
