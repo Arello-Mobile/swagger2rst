@@ -7,23 +7,102 @@ else:
     WITH_PANDOC = True
 
 from swg2rst.swagger import BaseSwaggerObject
+from swg2rst.swagger import SchemaObjects
+from swg2rst.swagger import SchemaMapWrapper
+from swg2rst.swagger import PRIMITIVE_TYPES
+from swg2rst.swagger import SchemaTypes
 
 HEADERS = {1: '=', 2: '~', 3: '-', 4: '+', 5: '^'}
 
 
 class SwaggerObject(BaseSwaggerObject):
 
-    def get_type_description(self, _type, *args, **kwargs):
-        kwargs['post_callback'] = self._post_process_description
-        return self.schemas.get_type_description(_type, *args, **kwargs)
-
     def get_regular_properties(self, _type, *args, **kwargs):
+        if not SchemaObjects.contains(_type):
+            return _type
         kwargs['post_callback'] = self._post_process_description
-        return self.schemas.get_regular_properties(_type, *args, **kwargs)
+        schema = SchemaObjects.get(_type)
+        head = """.. _{}{}:
+
+
+.. csv-table::
+    :delim: |
+    :header: "Name", "Required", "Type", "Format", "Properties", "Description"
+    :widths: 20, 10, 15, 15, 30, 25
+
+""".format(schema.schema_id, args[0] if args else '')
+        kwargs['no_internal'] = True
+        body = []
+        for p in schema.properties:
+            body.append('        {} | {} | {} | {} | {} | {} \n'.format(
+                p.get('name') or '',
+                'Yes' if p.get('required') else 'No',
+                self.get_type_description(p['type'], *args, **kwargs),
+                p.get('type_format') or '',
+                '{}'.format(p.get('type_properties') or ''),
+                p.get('description') or '')
+            )
+        return head + ''.join(body)
+
+    def get_type_description(self, _type, *args, **kwargs):
+        """ Get description of type
+
+        :param str _type:
+        :param post_callback:
+        :rtype: str
+        """
+        if not SchemaObjects.contains(_type):
+            return _type
+        kwargs['post_callback'] = self._post_process_description
+        schema = SchemaObjects.get(_type)
+        if schema.all_of:
+            models = ','.join(
+                (self.get_type_description(_type, *args, **kwargs) for _type in schema.all_of)
+            )
+            result = '{}'.format(models.split(',')[0])
+            for r in models.split(',')[1:]:
+                result += ' extended {}'.format(r)
+        elif schema.is_array:
+            result = 'array of {}'.format(
+                self.get_type_description(schema.item['type'], *args, **kwargs))
+        else:
+            result = schema.name
+            if kwargs.get('post_callback'):
+                result = kwargs['post_callback'](result, schema, *args, **kwargs)
+        # if not kwargs.get('no_internal'):
+        #     for _sch in schema.nested_schemas:
+        #         sch = SchemaObjects.get(_sch)
+        #         if sch.is_array:
+        #             result += '\n\n' + cls.get_regular_properties(sch.item['type'], *args, **kwargs)
+        #         elif sch.properties:
+        #             result += '\n\n' + cls.get_regular_properties(sch.schema_id, *args, **kwargs)
+        return result
 
     def get_additional_properties(self, _type, *args, **kwargs):
+        if not SchemaObjects.contains(_type):
+            return _type
         kwargs['post_callback'] = self._post_process_description
-        return self.schemas.get_additional_properties(_type, *args, **kwargs)
+        schema = SchemaObjects.get(_type)
+        # link = '.. _i_65ee0248eafa0d637832fa3e8d9d388f:'
+        head = '.. _{}:\n\n\n'.format(schema.schema_id)
+        body = []
+        if schema.nested_schemas:
+            for sch in schema.nested_schemas:
+                nested_schema = SchemaObjects.get(sch)
+                body.append('{}'.format(
+                    self.get_type_description(nested_schema.schema_id, *args, **kwargs)))
+                if isinstance(nested_schema, SchemaMapWrapper):
+                    body[-1] = 'Map of {{"string":"{}"}}\n\n'.format(body[-1])
+                    if nested_schema.item and nested_schema.item.get('type'):
+                        if (nested_schema.item['type'] not in PRIMITIVE_TYPES) \
+                                and (nested_schema.item['type'][0] != SchemaTypes.DEFINITION[0]):
+                            body.append(self.get_regular_properties(nested_schema.item['type'], *args, **kwargs))
+                    else:
+                        body.append(self.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
+        elif schema.type_format:
+            body.append(
+                'Map of {{"string":"{}"}}'.format(self.get_type_description(schema.type_format, *args, **kwargs)))
+        return head + ''.join(body)
 
     @staticmethod
     def _post_process_description(result, schema, *args, **kwargs):
