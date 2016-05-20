@@ -1,7 +1,6 @@
 import json
 import re
 from collections import defaultdict
-from functools import partial
 from hashlib import md5
 from operator import attrgetter
 
@@ -629,14 +628,6 @@ class BaseSwaggerObject(SecurityMixin):
         self.security_definitions = {
             name: SecurityDefinition(name, _obj) for name, _obj in obj.items()
         }
-
-    def get_type_description(self, _type, *args, **kwargs):
-        """ Get description of type
-
-        :param str _type:
-        :rtype: str
-        """
-        return self.schemas.get_type_description(_type, *args, **kwargs)
 
 
 class Operation(SecurityMixin):

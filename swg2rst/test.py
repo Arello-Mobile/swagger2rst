@@ -2,9 +2,13 @@ import codecs
 import functools
 import json
 import os
+import inspect
+import importlib
+from jinja2 import Environment, PackageLoader, FileSystemLoader, TemplateError
 from unittest import TestCase, SkipTest, main
 
 from swg2rst import swagger
+from swg2rst.utils import rst
 
 
 SAMPLES_PATH = os.path.join(os.path.dirname(__file__), os.pardir, 'samples')
@@ -225,6 +229,50 @@ class InstagramTestCase(BaseSwaggerTestCase, TestCase):
             {'data': [raw['responses']['200.data']] * self.examples['array_items_count']}
         )
 
+
+class IntegrationsTestCase(TestCase):
+
+    def test_additionalProp(self):
+        swagger_file = os.path.join(SAMPLES_PATH, 'additionalProperties.json')
+        with codecs.open(swagger_file, 'r', encoding='utf-8') as _file:
+            doc = json.load(_file)
+        self.swagger_doc = rst.SwaggerObject(doc)
+        doc_module = importlib.import_module('swg2rst.utils.rst')
+        jinja_env = Environment(lstrip_blocks=True, trim_blocks=True)
+        jinja_env.loader = PackageLoader('swg2rst')
+        for name, function in inspect.getmembers(doc_module, inspect.isfunction):
+            jinja_env.filters[name] = function
+        jinja_env.filters['json_dumps'] = json.dumps
+        template = jinja_env.get_template('basic.rst')
+        self.raw_rst = template.render(doc=self.swagger_doc)
+        with codecs.open(os.path.join(SAMPLES_PATH, 'additionalProperties.rst'), 'r', encoding='utf-8') as _file:
+            generated_line = (i for i in self.raw_rst.split('\n'))
+            normalize = lambda x: x[:-1] if x[-1] == '\n' else x
+            original_line = _file.readline()
+            while original_line:
+                self.assertEqual(normalize(original_line), generated_line.next())
+                original_line = _file.readline()
+
+    def test_intergation_allOf(self):
+        swagger_file = os.path.join(SAMPLES_PATH, 'allOf.json')
+        with codecs.open(swagger_file, 'r', encoding='utf-8') as _file:
+            doc = json.load(_file)
+        self.swagger_doc = rst.SwaggerObject(doc)
+        doc_module = importlib.import_module('swg2rst.utils.rst')
+        jinja_env = Environment(lstrip_blocks=True, trim_blocks=True)
+        jinja_env.loader = PackageLoader('swg2rst')
+        for name, function in inspect.getmembers(doc_module, inspect.isfunction):
+            jinja_env.filters[name] = function
+        jinja_env.filters['json_dumps'] = json.dumps
+        template = jinja_env.get_template('basic.rst')
+        self.raw_rst = template.render(doc=self.swagger_doc)
+        with codecs.open(os.path.join(SAMPLES_PATH, 'allOf.rst'), 'r', encoding='utf-8') as _file:
+            generated_line = (i for i in self.raw_rst.split('\n'))
+            normalize = lambda x: x[:-1] if x[-1] == '\n' else x
+            original_line = _file.readline()
+            while original_line:
+                self.assertEqual(normalize(original_line), generated_line.next())
+                original_line = _file.readline()
 
 if __name__ == '__main__':
     main()

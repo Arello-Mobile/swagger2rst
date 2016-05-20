@@ -1,0 +1,169 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "description": "",
+    "title": "API title"
+  },
+  "host": "",
+  "basePath": "/",
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json",
+    "application/x-www-form-urlencoded",
+    "multipart/form-data"
+  ],
+  "paths": {
+    "/api/v1/questionnaire/get/": {
+      "get": {
+        "summary": "Return Recording Questionnaire",
+        "tags": [
+          "questionnaire"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording Questionnaire",
+            "schema": {
+              "required": [
+                "response",
+                "status"
+              ],
+              "type": "object",
+              "properties": {
+                "status": {
+                  "default": 200,
+                  "type": "integer"
+                },
+                "response": {
+                  "required": [
+                    "sections",
+                    "answers",
+                    "questions"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "sections": {
+                      "additionalProperties": {
+                        "items": {
+                          "type": "string",
+                          "description": "My descr to search it"
+                        },
+                        "type": "array",
+                        "description": "custom answer Description"
+                      },
+                      "type": "object"
+                    },
+                    "questions": {
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "proper1": {
+                            "type": "string"
+                          },
+                          "proper2": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "sentenses": {
+                      "additionalProperties": {
+                        "properties": {},
+                        "type": "string",
+                        "description": "*** Important descr ***"
+                      },
+                      "type": "object"
+                    },
+                    "requests1": {
+                      "additionalProperties": {
+                        "items": {
+                          "type": "object",
+                          "description": "another descr to search it",
+                          "properties": {
+                            "arr_prop1": {
+                              "type": "string"
+                            },
+                            "arr_prop2": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "type": "array",
+                        "description": "custom request Description"
+                      },
+                      "type": "object"
+                    },
+                    "requests2": {
+                      "additionalProperties": {
+                        "items": {
+                            "$ref": "#/definitions/RecordingSerializer"
+                        },
+                        "type": "array",
+                        "description": "custom request Description"
+                      },
+                      "type": "object"
+                    },
+                    "answers": {
+                      "additionalProperties": {
+                        "$ref": "#/definitions/AnswerModel"
+                      },
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "RecordingSerializer": {
+      "required": [
+        "record_id",
+        "phrase_id",
+        "recording"
+      ],
+      "type": "object",
+      "properties": {
+        "record_id": {
+          "type": "integer"
+        },
+        "phrase_id": {
+          "type": "integer"
+        },
+        "recording": {
+          "type": "string"
+        }
+      }
+    },
+    "AnswerModel": {
+      "required": [
+        "guid1",
+        "favorites1"
+      ],
+      "type": "object",
+      "properties": {
+        "guid1": {
+          "type": "string"
+        },
+        "favorites1": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "custom answer Description"
+        }
+      }
+    }
+  }
+}

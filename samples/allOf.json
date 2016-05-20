@@ -1,0 +1,112 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "description": "",
+    "title": "API title"
+  },
+  "host": "",
+  "basePath": "/",
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json",
+    "application/x-www-form-urlencoded",
+    "multipart/form-data"
+  ],
+  "paths": {
+    "/api/v1/questionnaire/get/": {
+      "get": {
+        "summary": "Return Recording Questionnaire",
+        "tags": [
+          "questionnaire"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "201": {
+            "description": "Redefined create method",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/AnswerModel"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "pdf_url": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "200": {
+            "description": "Redefined update method",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/RecordingSerializer"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "pdf_url": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "RecordingSerializer": {
+      "required": [
+        "record_id",
+        "phrase_id",
+        "recording"
+      ],
+      "type": "object",
+      "properties": {
+        "record_id": {
+          "type": "integer"
+        },
+        "phrase_id": {
+          "type": "integer"
+        },
+        "recording": {
+          "type": "string"
+        }
+      }
+    },
+    "AnswerModel": {
+      "required": [
+        "guid1",
+        "favorites1"
+      ],
+      "type": "object",
+      "properties": {
+        "guid1": {
+          "type": "string"
+        },
+        "favorites1": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "custom answer Description"
+        }
+      }
+    }
+  }
+}
