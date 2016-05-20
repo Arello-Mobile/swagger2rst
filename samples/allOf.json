@@ -29,12 +29,12 @@
           "application/json"
         ],
         "responses": {
-          "201": {
-            "description": "Redefined create method",
+          "200": {
+            "description": "Redefined update method",
             "schema": {
               "allOf": [
                 {
-                  "$ref": "#/definitions/AnswerModel"
+                  "$ref": "#/definitions/RecordingSerializer"
                 },
                 {
                   "type": "object",
@@ -47,12 +47,12 @@
               ]
             }
           },
-          "200": {
-            "description": "Redefined update method",
+          "201": {
+            "description": "Redefined create method",
             "schema": {
               "allOf": [
                 {
-                  "$ref": "#/definitions/RecordingSerializer"
+                  "$ref": "#/definitions/AnswerModel"
                 },
                 {
                   "type": "object",
