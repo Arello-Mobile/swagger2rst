@@ -458,25 +458,31 @@ class SchemaObjects(object):
 
     @classmethod
     def get_regular_properties(cls, _type, *args, **kwargs):
+        if not cls.contains(_type):
+            return _type
+
         schema = cls.get(_type)
-        head = """
+        head = """.. _{}{}:
+
+
 .. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-"""
-        body = ''
+""".format(schema.schema_id, args[0] if args else '')
+        kwargs['no_internal'] = True
+        body = []
         for p in schema.properties:
-            body += '        {} | {} | {} | {} | {} | {} \n'.format(
+            body.append('        {} | {} | {} | {} | {} | {} \n'.format(
                 p.get('name') or '',
                 'Yes' if p.get('required') else 'No',
                 cls.get_type_description(p['type'], *args, **kwargs),
                 p.get('type_format') or '',
                 '{}'.format(p.get('type_properties') or ''),
-                p.get('description') or ''
+                p.get('description') or '')
             )
-        return head + body
+        return head + ''.join(body)
 
     @classmethod
     def get_type_description(cls, _type, *args, **kwargs):
@@ -504,11 +510,21 @@ class SchemaObjects(object):
             result = schema.name
             if kwargs.get('post_callback'):
                 result = kwargs['post_callback'](result, schema, *args, **kwargs)
-
+        # if not kwargs.get('no_internal'):
+        #     for _sch in schema.nested_schemas:
+        #         sch = SchemaObjects.get(_sch)
+        #         if sch.is_array:
+        #             result += '\n\n' + cls.get_regular_properties(sch.item['type'], *args, **kwargs)
+        #         elif sch.properties:
+        #             result += '\n\n' + cls.get_regular_properties(sch.schema_id, *args, **kwargs)
         return result
+
 
     @classmethod
     def get_additional_properties(cls, _type, *args, **kwargs):
+        if not cls.contains(_type):
+            return _type
+
         schema = cls.get(_type)
         # link = '.. _i_65ee0248eafa0d637832fa3e8d9d388f:'
         head = '.. _{}:\n\n\n'.format(schema.schema_id)
@@ -516,8 +532,10 @@ class SchemaObjects(object):
         if schema.nested_schemas:
             for sch in schema.nested_schemas:
                 nested_schema = cls.get(sch)
-                body.append('Map of {{"string":"{}"}}\n\n'.format(cls.get_type_description(nested_schema.schema_id, *args, **kwargs)))
+                body.append('{}'.format(
+                    cls.get_type_description(nested_schema.schema_id, *args, **kwargs)))
                 if isinstance(nested_schema, SchemaMapWrapper):
+                    body[-1] = 'Map of {{"string":"{}"}}\n\n'.format(body[-1])
                     if nested_schema.item and nested_schema.item.get('type'):
                         if (nested_schema.item['type'] not in PRIMITIVE_TYPES)\
                                 and (nested_schema.item['type'][0] != SchemaTypes.DEFINITION[0]):
