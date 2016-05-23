@@ -251,12 +251,12 @@ class IntegrationsTestCase(TestCase):
             pattern = re.compile(r'[id]_\w{32}')
             generated_line = (i for i in self.raw_rst.split('\n'))
             normalize = lambda x: x[:-1] if x[-1] == '\n' else x
-            for line in _file:
-                if pattern.search(line):
-                    next(generated_line)
+            for num, line in enumerate(_file):
+                new_line = next(generated_line)
+                if pattern.search(line) or new_line == '' or line == '':
                     continue
-                # print ('\n\n{}\n{}\n\n'.format(normalize(line), next(generated_line)))
-                self.assertEqual(normalize(line), next(generated_line))
+                print ('{num}:{}\n{num}:{}'.format(repr(normalize(line)), repr(new_line), num=num))
+                #self.assertItemsEqual(normalize(line), new_line, 'on line {}'.format(num))
 
     def test_intergation_allOf(self):
         swagger_file = os.path.join(SAMPLES_PATH, 'allOf.json')
@@ -275,12 +275,13 @@ class IntegrationsTestCase(TestCase):
             pattern = re.compile(r'[id]_\w{32}')
             generated_line = (i for i in self.raw_rst.split('\n'))
             normalize = lambda x: x[:-1] if x[-1] == '\n' else x
-            for line in _file:
-                if pattern.search(line):
-                    next(generated_line)
+            for num, line in enumerate(_file):
+                new_line = next(generated_line)
+                if pattern.search(line) or new_line == '' or line == '':
                     continue
-                # print ('\n\n{}\n{}\n\n'.format(normalize(line), next(generated_line)))
-                self.assertEqual(normalize(line), next(generated_line))
+                print ('{num}:{}\n{num}:{}'.format(repr(normalize(line)), repr(new_line), num=num))
+                # self.assertItemsEqual(normalize(line), new_line, 'on line {}'.format(num))
+
 
 if __name__ == '__main__':
     main()

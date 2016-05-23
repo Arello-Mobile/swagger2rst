@@ -25,7 +25,7 @@ class SwaggerObject(BaseSwaggerObject):
         if schema.schema_type == SchemaTypes.DEFINITION:
             if not kwargs.get('definition'):
                 return ''
-        head = """.. _{}{}:
+        head = '''.. _{}{}:
 
 
 .. csv-table::
@@ -33,8 +33,7 @@ class SwaggerObject(BaseSwaggerObject):
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-""".format(schema.schema_id, args[0] if args else '')
-        kwargs['no_internal'] = True
+'''.format(schema.schema_id, args[0] if args else '')
         body = []
         for p in schema.properties:
             body.append('        {} | {} | {} | {} | {} | {} \n'.format(
@@ -80,7 +79,7 @@ class SwaggerObject(BaseSwaggerObject):
         kwargs['post_callback'] = self._post_process_description
         schema = SchemaObjects.get(_type)
         # link = '.. _i_65ee0248eafa0d637832fa3e8d9d388f:'
-        head = '.. _{}:\n\n\n'.format(schema.schema_id)
+        head = '.. _{}{}:\n\n\n'.format(schema.schema_id, args[0] if args else '')
         body = []
         if schema.nested_schemas:
             for sch in schema.nested_schemas:
@@ -97,7 +96,7 @@ class SwaggerObject(BaseSwaggerObject):
                         body.append(self.get_regular_properties(nested_schema.schema_id, *args, **kwargs))
         elif schema.type_format:
             body.append(
-                'Map of {{"string":"{}"}}'.format(self.get_type_description(schema.type_format, *args, **kwargs)))
+                'Map of {{"key":"{}"}}'.format(self.get_type_description(schema.type_format, *args, **kwargs)))
         return head + ''.join(body)
 
     @staticmethod
