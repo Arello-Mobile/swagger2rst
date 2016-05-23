@@ -210,7 +210,7 @@
             {% set basic = False %}
             {% set definition = True %}
 
-{% include "schema.rst" %}
+            {%- include "schema.rst" -%}
 
             {% set schema_link = True %}
 
@@ -222,7 +222,7 @@
 
 {{ 'Responses'|header(4) }}
 
-        {% for code, response in operation.responses.items() %}
+        {% for code, response in operation.responses.items() -%}
 
 {{ '**{}**'.format(code)|header(5) }}
 
@@ -238,7 +238,7 @@
 Type: {{ doc.get_type_description(response.type) }}
                 {% else %}
 
-{% include "schema.rst" %}
+{%- include "schema.rst" -%}
 
             {% endif %}
 
@@ -262,7 +262,7 @@ Type: {{ doc.get_type_description(response.type) }}
 
             {% endif %}
 
-        {% endfor %}  {# end responses #}
+        {%- endfor %}  {# end responses #}
 
         {% if operation.security %}
 
@@ -287,13 +287,13 @@ Type: {{ doc.get_type_description(response.type) }}
 
     {% set schema_link = True %}
 
-    {% for schema in doc.schemas.get_schemas(['definition']) %}
+    {% for schema in doc.schemas.get_schemas(['definition']) -%}
         {% set schema_header = '{} Model Structure'.format(schema.name)|header(3) %}
         {% set basic = False %}
         {% set definition = True %}
         {% set exists_schema = [] %}
 
-{% include "schema.rst" %}
+        {%- include "schema.rst" -%}
 
-    {% endfor %}
+    {%- endfor %}
 {% endif %}
