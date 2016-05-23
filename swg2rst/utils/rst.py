@@ -22,6 +22,9 @@ class SwaggerObject(BaseSwaggerObject):
             return _type
         kwargs['post_callback'] = self._post_process_description
         schema = SchemaObjects.get(_type)
+        if schema.schema_type == SchemaTypes.DEFINITION:
+            if not kwargs.get('definition'):
+                return ''
         head = """.. _{}{}:
 
 
@@ -69,13 +72,6 @@ class SwaggerObject(BaseSwaggerObject):
             result = schema.name
             if kwargs.get('post_callback'):
                 result = kwargs['post_callback'](result, schema, *args, **kwargs)
-        # if not kwargs.get('no_internal'):
-        #     for _sch in schema.nested_schemas:
-        #         sch = SchemaObjects.get(_sch)
-        #         if sch.is_array:
-        #             result += '\n\n' + cls.get_regular_properties(sch.item['type'], *args, **kwargs)
-        #         elif sch.properties:
-        #             result += '\n\n' + cls.get_regular_properties(sch.schema_id, *args, **kwargs)
         return result
 
     def get_additional_properties(self, _type, *args, **kwargs):
@@ -89,10 +85,10 @@ class SwaggerObject(BaseSwaggerObject):
         if schema.nested_schemas:
             for sch in schema.nested_schemas:
                 nested_schema = SchemaObjects.get(sch)
-                body.append('{}'.format(
-                    self.get_type_description(nested_schema.schema_id, *args, **kwargs)))
+                if not nested_schema:
+                    return 'Error:\n{}'.format(repr(nested_schema))
                 if isinstance(nested_schema, SchemaMapWrapper):
-                    body[-1] = 'Map of {{"string":"{}"}}\n\n'.format(body[-1])
+                    body.append('Map of {{"string":"{}"}}\n\n'.format(self.get_type_description(nested_schema.schema_id, *args, **kwargs)))
                     if nested_schema.item and nested_schema.item.get('type'):
                         if (nested_schema.item['type'] not in PRIMITIVE_TYPES) \
                                 and (nested_schema.item['type'][0] != SchemaTypes.DEFINITION[0]):

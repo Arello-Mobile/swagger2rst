@@ -206,8 +206,9 @@
             {% set schema = operation.body %}
             {% set schema_header = 'Body'|header(5) %}
             {% set schema_link = False %}
-            {% set exists_schema = [] %}
+            {% set exists_schema = [False] %}
             {% set basic = False %}
+            {% set definition = True %}
 
 {% include "schema.rst" %}
 
@@ -229,11 +230,16 @@
 
             {% if doc.schemas.contains(response.type) %}
                 {% set schema = doc.schemas.get(response.type) %}
+                {% set schema_header = '**Response Schema:**' %}
+                {% set exists_schema = [False] %} {# just flag, if schema.rst return something #}
+                {% set basic = False %} {# used for recursion count #}
 
-                    {% set schema_header = '**Response Schema:**' %}
-                    {% set exists_schema = [] %}
-                    {% set basic = False %}
+                {% if not schema.is_inline or schema.is_array %}
+Type: {{ doc.get_type_description(response.type) }}
+                {% else %}
 {% include "schema.rst" %}
+            {% endif %}
+
                 {% if response.headers %}
 
 {{ 'Headers:' }}
@@ -282,6 +288,8 @@
     {% for schema in doc.schemas.get_schemas(['definition']) %}
         {% set schema_header = '{} Model Structure'.format(schema.name)|header(3) %}
         {% set basic = False %}
+        {% set definition = True %}
+        {% set exists_schema = [False] %}
 {% include "schema.rst" %}
 
     {% endfor %}

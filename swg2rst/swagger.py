@@ -783,6 +783,7 @@ class AbstractTypeObject(object):
             _property_type, _property_format, _property_dict = self.get_type_properties(
                 property_obj['additionalProperties'], '{}-mapped'.format(name), additional_prop=True)
             if _property_type not in PRIMITIVE_TYPES:
+                SchemaMapWrapper.wrap(SchemaObjects.get(_property_type))
                 _schema.nested_schemas.add(_property_type)
             else:
                 _schema.type_format = _property_type

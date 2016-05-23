@@ -255,8 +255,8 @@ class IntegrationsTestCase(TestCase):
                 if pattern.search(line):
                     next(generated_line)
                     continue
-                print ('\n\n{}\n{}\n\n'.format(normalize(line), next(generated_line)))
-                # self.assertEqual(normalize(line), next(generated_line))
+                # print ('\n\n{}\n{}\n\n'.format(normalize(line), next(generated_line)))
+                self.assertEqual(normalize(line), next(generated_line))
 
     def test_intergation_allOf(self):
         swagger_file = os.path.join(SAMPLES_PATH, 'allOf.json')
@@ -279,8 +279,8 @@ class IntegrationsTestCase(TestCase):
                 if pattern.search(line):
                     next(generated_line)
                     continue
-                print ('\n\n{}\n{}\n\n'.format(normalize(line), next(generated_line)))
-                # self.assertEqual(normalize(line), next(generated_line))
+                # print ('\n\n{}\n{}\n\n'.format(normalize(line), next(generated_line)))
+                self.assertEqual(normalize(line), next(generated_line))
 
 if __name__ == '__main__':
     main()
