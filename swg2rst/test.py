@@ -1,15 +1,18 @@
 import codecs
 import functools
-import json
 import os, re
 import inspect
 import importlib
+from io import StringIO as file_obj
 from jinja2 import Environment, PackageLoader, FileSystemLoader, TemplateError
 from unittest import TestCase, SkipTest, main
 
 from swg2rst import swagger
 from swg2rst.utils import rst
-
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 SAMPLES_PATH = os.path.join(os.path.dirname(__file__), os.pardir, 'samples')
 
@@ -230,15 +233,23 @@ class InstagramTestCase(BaseSwaggerTestCase, TestCase):
         )
 
 
-class IntegrationsTestCase(TestCase):
-    """
-    Using rst-specific methods
-    """
-    def test_additionalProp(self):
-        swagger_file = os.path.join(SAMPLES_PATH, 'additionalProperties.json')
-        with codecs.open(swagger_file, 'r', encoding='utf-8') as _file:
-            doc = json.load(_file)
-        self.swagger_doc = rst.SwaggerObject(doc)
+class RSTIntegrationsTestCase(TestCase):
+    '''
+    Testing rst-specific methods
+    '''
+    @staticmethod
+    def prepare_env(cnt, file_name=True):
+        this = {}
+        if file_name:
+            this['file_name_json'] = os.path.join(SAMPLES_PATH, '{}.json'.format(cnt))
+            this['file_name_rst']  = os.path.join(SAMPLES_PATH, '{}.rst'.format(cnt))
+            with codecs.open(this['file_name_json'], 'r', encoding='utf-8') as _file:
+                doc = json.load(_file)
+        else:
+            this['file_name_json'] = False
+            this['file_name_rst']  = False
+            doc = json.load(cnt)
+        this['swagger_doc'] = rst.SwaggerObject(doc)
         doc_module = importlib.import_module('swg2rst.utils.rst')
         jinja_env = Environment(lstrip_blocks=True, trim_blocks=True)
         jinja_env.loader = PackageLoader('swg2rst')
@@ -246,41 +257,143 @@ class IntegrationsTestCase(TestCase):
             jinja_env.filters[name] = function
         jinja_env.filters['json_dumps'] = json.dumps
         template = jinja_env.get_template('basic.rst')
-        self.raw_rst = template.render(doc=self.swagger_doc)
-        with codecs.open(os.path.join(SAMPLES_PATH, 'additionalProperties.rst'), 'r', encoding='utf-8') as _file:
-            pattern = re.compile(r'[id]_\w{32}')
-            generated_line = (i for i in self.raw_rst.split('\n'))
-            normalize = lambda x: x[:-1] if x[-1] == '\n' else x
-            for num, line in enumerate(_file):
-                new_line = next(generated_line)
-                if pattern.search(line) or new_line == '' or line == '':
-                    continue
-                print ('{num}:{}\n{num}:{}'.format(repr(normalize(line)), repr(new_line), num=num))
-                #self.assertItemsEqual(normalize(line), new_line, 'on line {}'.format(num))
+        this['raw_rst'] = template.render(doc=this['swagger_doc'])
+        this['pattern'] = re.compile(r'[idm]_\w{32}')
+        this['normalize'] = lambda x: x[:-1] if x[-1] == '\n' else x
+        return this
 
-    def test_intergation_allOf(self):
-        swagger_file = os.path.join(SAMPLES_PATH, 'allOf.json')
-        with codecs.open(swagger_file, 'r', encoding='utf-8') as _file:
-            doc = json.load(_file)
-        self.swagger_doc = rst.SwaggerObject(doc)
-        doc_module = importlib.import_module('swg2rst.utils.rst')
-        jinja_env = Environment(lstrip_blocks=True, trim_blocks=True)
-        jinja_env.loader = PackageLoader('swg2rst')
-        for name, function in inspect.getmembers(doc_module, inspect.isfunction):
-            jinja_env.filters[name] = function
-        jinja_env.filters['json_dumps'] = json.dumps
-        template = jinja_env.get_template('basic.rst')
-        self.raw_rst = template.render(doc=self.swagger_doc)
-        with codecs.open(os.path.join(SAMPLES_PATH, 'allOf.rst'), 'r', encoding='utf-8') as _file:
-            pattern = re.compile(r'[id]_\w{32}')
-            generated_line = (i for i in self.raw_rst.split('\n'))
-            normalize = lambda x: x[:-1] if x[-1] == '\n' else x
+    @staticmethod
+    def run_integration(this):
+        generated_line = (i for i in this['raw_rst'].split('\n'))
+        with codecs.open(this['file_name_rst'], 'r', encoding='utf-8') as _file:
             for num, line in enumerate(_file):
                 new_line = next(generated_line)
-                if pattern.search(line) or new_line == '' or line == '':
+                if this['pattern'].search(line) or new_line == '' or line == '':
                     continue
-                print ('{num}:{}\n{num}:{}'.format(repr(normalize(line)), repr(new_line), num=num))
-                # self.assertItemsEqual(normalize(line), new_line, 'on line {}'.format(num))
+                print ('{num}:{}\n{num}:{}'.format(repr(this['normalize'](line)), repr(new_line), num=num))
+                if this['normalize'](line) != new_line:
+                    raise Exception('Differences found at {} line'.format(num))
+
+    @staticmethod
+    def make_content():
+        return file_obj(u'''{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "description": "",
+    "title": "API title"
+  },
+  "host": "",
+  "basePath": "/",
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/short_path": {
+      "get": {
+        "responses": {
+          "999": {
+            "schema": {
+              "type": "object",
+                "properties": {
+                  "ReferenceProperty": {
+                    "additionalProperties": {
+                      "$ref": "#/definitions/SimpleSerializer" 
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+  "definitions": {
+    "SimpleSerializer": {
+      "type": "object",
+      "properties": {
+        "MyProp": {
+          "type": "string"
+        }
+      }
+    },
+    "DifficultSerializer": {
+      "schema": {
+        "allOf": [
+          {"$ref": "#/definitions/SimpleSerializer"},
+          { "type": "object",
+          "properties":{
+            "YouProp": {
+              "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}''')
+
+    def test_get_regular(self):
+        '''
+        SwaggerObject.get_regular_properties
+        '''
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_regular_properties('d_3dccce5dab252608978d2313d304bfbd', definition=True)
+        print result
+        expect = '''.. _d_3dccce5dab252608978d2313d304bfbd:
+
+
+.. csv-table::
+    :delim: |
+    :header: "Name", "Required", "Type", "Format", "Properties", "Description"
+    :widths: 20, 10, 15, 15, 30, 25
+
+        MyProp | No | string |  |  |  
+'''
+        self.assertItemsEqual(result, expect)
+
+    def test_get_type_definition(self):
+        '''SwaggerObject.get_type_description'''
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_type_description('d_3dccce5dab252608978d2313d304bfbd')
+        print result
+        expect = ':ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`'
+        self.assertItemsEqual(result, expect)
+
+    def test_get_type_inline(self):
+        '''SwaggerObject.get_type_description'''
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_type_description('i_7886d86d0baffa0e753f35d813f3cec6')
+        print result
+        expect = ':ref:`ReferenceProperty <i_7886d86d0baffa0e753f35d813f3cec6>`'
+        self.assertItemsEqual(result, expect)
+
+    def test_get_additional(self):
+        '''SwaggerObject.get_additional_properties'''
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_additional_properties('i_7886d86d0baffa0e753f35d813f3cec6')
+        print result
+        expect = '''.. _i_7886d86d0baffa0e753f35d813f3cec6:
+
+
+Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
+
+'''
+        self.assertItemsEqual(result, expect)
+
+    # def test_additionalProp(self):
+    #     file_name = 'additionalProperties'
+    #     this = self.prepare_env(file_name)
+    #     self.run_integration(this)
+    # 
+    # def test_intergation_allOf(self):
+    #     file_name = 'allOf'
+    #     this = self.prepare_env(file_name)
+    #     self.run_integration(this)
 
 
 if __name__ == '__main__':

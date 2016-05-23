@@ -45,21 +45,15 @@ Responses
 
 Redefined create method
 
-
- 
+  
 **Response Schema:**
 
- 
-:ref:`AnswerModel <d_74b96a00174cffc078641e1f8c9fbb40>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
+ :ref:`AnswerModel <d_74b96a00174cffc078641e1f8c9fbb40>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
 
 
-
-
- 
 **Inline schema:**
 
- 
-.. _i_d766acd89aec6b99c80c1b79b5a38a37:
+ .. _i_d766acd89aec6b99c80c1b79b5a38a37:
 
 
 .. csv-table::
@@ -78,22 +72,19 @@ Redefined create method
 
 
 
-
 **Example:**
 
 .. code-block:: javascript
 
     {
-        "phrase_id": 5, 
+        "phrase_id": 1, 
         "favorites1": [
-            "value", 
-            "value", 
-            "value"
+            "somestring"
         ], 
-        "guid1": "value", 
-        "pdf_url": "value", 
-        "recording": "value", 
-        "record_id": 5
+        "guid1": "somestring", 
+        "pdf_url": "somestring", 
+        "recording": "somestring", 
+        "record_id": 1
     }
 
 
@@ -103,21 +94,15 @@ Redefined create method
 
 Redefined update method
 
-
- 
+  
 **Response Schema:**
 
- 
-:ref:`RecordingSerializer <d_e408f13b0c465e8b895d79e7a4a4971c>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
+ :ref:`RecordingSerializer <d_e408f13b0c465e8b895d79e7a4a4971c>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
 
 
-
-
- 
 **Inline schema:**
 
- 
-.. _i_d766acd89aec6b99c80c1b79b5a38a37:
+ .. _i_d766acd89aec6b99c80c1b79b5a38a37:
 
 
 .. csv-table::
@@ -136,22 +121,19 @@ Redefined update method
 
 
 
-
 **Example:**
 
 .. code-block:: javascript
 
     {
-        "phrase_id": 5, 
+        "phrase_id": 1, 
         "favorites1": [
-            "value", 
-            "value", 
-            "value"
+            "somestring"
         ], 
-        "guid1": "value", 
-        "pdf_url": "value", 
-        "recording": "value", 
-        "record_id": 5
+        "guid1": "somestring", 
+        "pdf_url": "somestring", 
+        "recording": "somestring", 
+        "record_id": 1
     }
 
 
@@ -163,12 +145,10 @@ Data Structures
 ~~~~~~~~~~~~~~~
 
 
- 
 AnswerModel Model Structure
 ---------------------------
 
- 
-.. _d_74b96a00174cffc078641e1f8c9fbb40:
+ .. _d_74b96a00174cffc078641e1f8c9fbb40:
 
 
 .. csv-table::
@@ -183,14 +163,10 @@ AnswerModel Model Structure
 
 
 
-
-
- 
 RecordingSerializer Model Structure
 -----------------------------------
 
- 
-.. _d_e408f13b0c465e8b895d79e7a4a4971c:
+ .. _d_e408f13b0c465e8b895d79e7a4a4971c:
 
 
 .. csv-table::
@@ -201,8 +177,6 @@ RecordingSerializer Model Structure
         record_id | Yes | integer |  |  |  
         phrase_id | Yes | integer |  |  |  
         recording | Yes | string |  |  |  
-
-
 
 
 

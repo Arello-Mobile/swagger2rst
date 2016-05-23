@@ -87,7 +87,7 @@ class SwaggerObject(BaseSwaggerObject):
                 if not nested_schema:
                     return 'Error:\n{}'.format(repr(nested_schema))
                 if isinstance(nested_schema, SchemaMapWrapper):
-                    body.append('Map of {{"string":"{}"}}\n\n'.format(self.get_type_description(nested_schema.schema_id, *args, **kwargs)))
+                    body.append('Map of {{"key":"{}"}}\n\n'.format(self.get_type_description(nested_schema.schema_id, *args, **kwargs)))
                     if nested_schema.item and nested_schema.item.get('type'):
                         if (nested_schema.item['type'] not in PRIMITIVE_TYPES) \
                                 and (nested_schema.item['type'][0] != SchemaTypes.DEFINITION[0]):
