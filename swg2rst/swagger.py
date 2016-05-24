@@ -465,7 +465,7 @@ class SchemaObjects(object):
         tmp = schema.properties[:] # copy
         prop = {}
         to_dict = lambda e: prop.update({e.pop('name'): e})
-        map(to_dict, tmp)
+        [to_dict(i) for i in tmp] # map(to_dict, tmp)
         for _prop in _schema.properties:
             if prop.get(_prop['name']):
                 prop.pop(_prop['name'])
