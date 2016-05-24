@@ -257,7 +257,7 @@ class RSTIntegrationsTestCase(TestCase):
         jinja_env.loader = PackageLoader('swg2rst')
         for name, function in inspect.getmembers(doc_module, inspect.isfunction):
             jinja_env.filters[name] = function
-        jinja_env.filters['json_dumps'] = json.dumps
+        jinja_env.filters['sorted'] = sorted
         template = jinja_env.get_template('basic.rst')
         this['raw_rst'] = template.render(doc=this['swagger_doc'])
         this['pattern'] = re.compile(r'[idm]_\w{32}')
@@ -389,13 +389,13 @@ Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
     def test_additionalProp(self):
         file_name = 'additionalProperties'
         this = self.prepare_env(file_name)
-        # print(this['raw_rst'])
+        print(this['raw_rst'])
         self.run_integration(this)
 
     def test_intergation_allOf(self):
         file_name = 'allOf'
         this = self.prepare_env(file_name)
-        # print(this['raw_rst'])
+        print(this['raw_rst'])
         self.run_integration(this)
 
 

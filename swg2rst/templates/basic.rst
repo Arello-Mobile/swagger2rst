@@ -222,7 +222,7 @@
 
 {{ 'Responses'|header(4) }}
 
-        {% for code, response in operation.responses.items() -%}
+        {% for code, response in doc.sorted(operation.responses) -%}
 
 {{ '**{}**'.format(code)|header(5) }}
 

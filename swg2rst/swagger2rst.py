@@ -80,7 +80,6 @@ def main(from_script=True):
 
     for name, function in inspect.getmembers(doc_module, inspect.isfunction):
         jinja_env.filters[name] = function
-    jinja_env.filters['json_dumps'] = json.dumps
 
     if args.template:
         jinja_env.loader = FileSystemLoader(os.path.dirname(args.template))

@@ -11,11 +11,26 @@ from swg2rst.swagger import SchemaObjects
 from swg2rst.swagger import SchemaMapWrapper
 from swg2rst.swagger import PRIMITIVE_TYPES
 from swg2rst.swagger import SchemaTypes
+from json import dumps
 
 HEADERS = {1: '=', 2: '~', 3: '-', 4: '+', 5: '^'}
 
 
 class SwaggerObject(BaseSwaggerObject):
+
+    @staticmethod
+    def sorted(collection):
+        '''
+        sorting dict by value,
+        sorting schema-collection by key
+        '''
+        if isinstance(collection, dict):
+            return sorted(collection.items(), key=lambda x:x[0])
+        tmp = {}
+        for item in collection:
+            tmp[item] = SchemaObjects.get(item).name
+        tmp2 = sorted(tmp.items(), key=lambda x:x[1])
+        return (x[0] for x in tmp2)
 
     def get_regular_properties(self, _type, *args, **kwargs):
         if not SchemaObjects.contains(_type):
@@ -116,3 +131,16 @@ def md2rst(obj):
         return pypandoc.convert(obj, to='rst', format='markdown')
     else:
         return obj.replace('```', '\n')
+
+def json_dumps(obj, *args, **kwargs):
+
+    def sorter(obj):
+        if isinstance(obj, dict):
+            res = SwaggerObject.sorted(obj)
+            for num, chunk in enumerate(res):
+                res[num] = (chunk[0], sorter(chunk[1]))
+            return dict(res) # <-- orederedDict needed
+        return obj
+
+    # res = sorter(obj)
+    return dumps(obj, sort_keys=True, indent=kwargs.get('indent'))
