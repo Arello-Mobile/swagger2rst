@@ -27,7 +27,6 @@ class SwaggerObject(BaseSwaggerObject):
                 return ''
         head = '''.. _{}{}:
 
-
 .. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
@@ -44,6 +43,7 @@ class SwaggerObject(BaseSwaggerObject):
                 '{}'.format(p.get('type_properties') or ''),
                 p.get('description') or '')
             )
+        body.sort()
         return head + ''.join(body)
 
     def get_type_description(self, _type, *args, **kwargs):
@@ -79,7 +79,7 @@ class SwaggerObject(BaseSwaggerObject):
         kwargs['post_callback'] = self._post_process_description
         schema = SchemaObjects.get(_type)
         # link = '.. _i_65ee0248eafa0d637832fa3e8d9d388f:'
-        head = '.. _{}{}:\n\n\n'.format(schema.schema_id, args[0] if args else '')
+        head = '.. _{}{}:\n\n'.format(schema.schema_id, args[0] if args else '')
         body = []
         if schema.nested_schemas:
             for sch in schema.nested_schemas:

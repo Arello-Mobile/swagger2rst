@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import codecs
 import functools
 import os, re
@@ -268,10 +270,11 @@ class RSTIntegrationsTestCase(TestCase):
         with codecs.open(this['file_name_rst'], 'r', encoding='utf-8') as _file:
             for num, line in enumerate(_file):
                 new_line = next(generated_line)
-                if this['pattern'].search(line) or new_line == '' or line == '':
+                '''More strict with commets'''
+                if this['pattern'].search(line):
                     continue
                 print ('{num}:{}\n{num}:{}'.format(repr(this['normalize'](line)), repr(new_line), num=num))
-                if this['normalize'](line) != new_line:
+                if this['normalize'](line).strip() != new_line.strip():
                     raise Exception('Differences found at {} line'.format(num))
 
     @staticmethod
@@ -343,9 +346,8 @@ class RSTIntegrationsTestCase(TestCase):
         '''
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_regular_properties('d_3dccce5dab252608978d2313d304bfbd', definition=True)
-        print result
+        print(result)
         expect = '''.. _d_3dccce5dab252608978d2313d304bfbd:
-
 
 .. csv-table::
     :delim: |
@@ -354,46 +356,47 @@ class RSTIntegrationsTestCase(TestCase):
 
         MyProp | No | string |  |  |  
 '''
-        self.assertItemsEqual(result, expect)
+        assert(result == expect)
 
     def test_get_type_definition(self):
         '''SwaggerObject.get_type_description'''
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_type_description('d_3dccce5dab252608978d2313d304bfbd')
-        print result
+        print(result)
         expect = ':ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`'
-        self.assertItemsEqual(result, expect)
+        assert(result == expect)
 
     def test_get_type_inline(self):
         '''SwaggerObject.get_type_description'''
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_type_description('i_7886d86d0baffa0e753f35d813f3cec6')
-        print result
+        print(result)
         expect = ':ref:`ReferenceProperty <i_7886d86d0baffa0e753f35d813f3cec6>`'
-        self.assertItemsEqual(result, expect)
+        assert(result == expect)
 
     def test_get_additional(self):
         '''SwaggerObject.get_additional_properties'''
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_additional_properties('i_7886d86d0baffa0e753f35d813f3cec6')
-        print result
+        print(result)
         expect = '''.. _i_7886d86d0baffa0e753f35d813f3cec6:
-
 
 Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
 
 '''
-        self.assertItemsEqual(result, expect)
+        assert(result == expect)
 
-    # def test_additionalProp(self):
-    #     file_name = 'additionalProperties'
-    #     this = self.prepare_env(file_name)
-    #     self.run_integration(this)
-    # 
-    # def test_intergation_allOf(self):
-    #     file_name = 'allOf'
-    #     this = self.prepare_env(file_name)
-    #     self.run_integration(this)
+    def test_additionalProp(self):
+        file_name = 'additionalProperties'
+        this = self.prepare_env(file_name)
+        # print(this['raw_rst'])
+        self.run_integration(this)
+
+    def test_intergation_allOf(self):
+        file_name = 'allOf'
+        this = self.prepare_env(file_name)
+        # print(this['raw_rst'])
+        self.run_integration(this)
 
 
 if __name__ == '__main__':

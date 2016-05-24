@@ -8,6 +8,8 @@ from cached_property import cached_property
 from jsonschema import (
     validate as schema_validate, FormatChecker, ValidationError, SchemaError)
 
+from ordered_set import OrderedSet as set
+
 from swg2rst.converter_exceptions import ConverterError
 from swg2rst.utils.logger import get_logger
 

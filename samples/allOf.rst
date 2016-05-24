@@ -39,35 +39,33 @@ Request
 Responses
 +++++++++
 
-
 **201**
 ^^^^^^^
 
 Redefined create method
 
-  
+ 
 **Response Schema:**
 
- :ref:`AnswerModel <d_74b96a00174cffc078641e1f8c9fbb40>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
 
+:ref:`AnswerModel <d_74b96a00174cffc078641e1f8c9fbb40>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
 
 **Inline schema:**
 
- .. _i_d766acd89aec6b99c80c1b79b5a38a37:
 
+.. _i_d766acd89aec6b99c80c1b79b5a38a37:
 
 .. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-        pdf_url | No | string |  |  |  
-        guid1 | Yes | string |  |  |  
         favorites1 | Yes | array of string |  |  | custom answer Description 
-        record_id | Yes | integer |  |  |  
+        guid1 | Yes | string |  |  |  
+        pdf_url | No | string |  |  |  
         phrase_id | Yes | integer |  |  |  
+        record_id | Yes | integer |  |  |  
         recording | Yes | string |  |  |  
-
 
 
 
@@ -77,46 +75,45 @@ Redefined create method
 .. code-block:: javascript
 
     {
-        "phrase_id": 1, 
+        "phrase_id": 5,
         "favorites1": [
-            "somestring"
-        ], 
-        "guid1": "somestring", 
-        "pdf_url": "somestring", 
-        "recording": "somestring", 
-        "record_id": 1
+            "value",
+            "value",
+            "value"
+        ],
+        "guid1": "value",
+        "pdf_url": "value",
+        "recording": "value",
+        "record_id": 5
     }
-
-
 
 **200**
 ^^^^^^^
 
 Redefined update method
 
-  
+ 
 **Response Schema:**
 
- :ref:`RecordingSerializer <d_e408f13b0c465e8b895d79e7a4a4971c>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
 
+:ref:`RecordingSerializer <d_e408f13b0c465e8b895d79e7a4a4971c>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37>`
 
 **Inline schema:**
 
- .. _i_d766acd89aec6b99c80c1b79b5a38a37:
 
+.. _i_d766acd89aec6b99c80c1b79b5a38a37:
 
 .. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-        pdf_url | No | string |  |  |  
-        guid1 | Yes | string |  |  |  
         favorites1 | Yes | array of string |  |  | custom answer Description 
-        record_id | Yes | integer |  |  |  
+        guid1 | Yes | string |  |  |  
+        pdf_url | No | string |  |  |  
         phrase_id | Yes | integer |  |  |  
+        record_id | Yes | integer |  |  |  
         recording | Yes | string |  |  |  
-
 
 
 
@@ -126,16 +123,17 @@ Redefined update method
 .. code-block:: javascript
 
     {
-        "phrase_id": 1, 
+        "phrase_id": 5,
         "favorites1": [
-            "somestring"
-        ], 
-        "guid1": "somestring", 
-        "pdf_url": "somestring", 
-        "recording": "somestring", 
-        "record_id": 1
+            "value",
+            "value",
+            "value"
+        ],
+        "guid1": "value",
+        "pdf_url": "value",
+        "recording": "value",
+        "record_id": 5
     }
-
 
   
 
@@ -148,17 +146,16 @@ Data Structures
 AnswerModel Model Structure
 ---------------------------
 
- .. _d_74b96a00174cffc078641e1f8c9fbb40:
 
+.. _d_74b96a00174cffc078641e1f8c9fbb40:
 
 .. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-        guid1 | Yes | string |  |  |  
         favorites1 | Yes | array of string |  |  | custom answer Description 
-
+        guid1 | Yes | string |  |  |  
 
 
 
@@ -166,18 +163,16 @@ AnswerModel Model Structure
 RecordingSerializer Model Structure
 -----------------------------------
 
- .. _d_e408f13b0c465e8b895d79e7a4a4971c:
 
+.. _d_e408f13b0c465e8b895d79e7a4a4971c:
 
 .. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-        record_id | Yes | integer |  |  |  
         phrase_id | Yes | integer |  |  |  
+        record_id | Yes | integer |  |  |  
         recording | Yes | string |  |  |  
-
-
 
 

@@ -14,6 +14,7 @@
 
 {%- endif %}
 
+
 {% for schema_id in schema.nested_schemas -%}
     {% set schema = doc.schemas.get(schema_id) %}
     {# if (not inline and schema.is_inline) or (inline and schema_id not in exists_schema) #}

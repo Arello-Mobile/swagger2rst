@@ -3,3 +3,5 @@ Jinja2==2.8
 jsonschema==2.5.1
 PyYAML==3.11
 strict_rfc3339
+ordered-set
+
