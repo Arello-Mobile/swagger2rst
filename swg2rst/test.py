@@ -268,35 +268,39 @@ class RSTIntegrationsTestCase(TestCase):
         log = []
         flag = None
         counter = 5
-        generated_line = (i for i in this['raw_rst'].split('\n'))
+        original_i  = 0
+        generated_i = 0
+        generated_lines = (i.strip() for i in this['raw_rst'].split('\n'))
         with codecs.open(this['file_name_rst'], 'r', encoding='utf-8') as _file:
-            new_line = next(generated_line)
-            for num, line in enumerate(_file):
-                log.append('{num}:{}\n{num}:{}'.format(repr(this['normalize'](line)), repr(new_line), num=num))
-                if (len(log) > counter) and (not flag):
-                    log.pop(0)
-                if (len(log) > 2 * counter - 1) and flag:
-                    print('\n'.join(log))
-                    raise Exception('Differences found at {} line!'.format(flag))
-
-                if num == 3850:
+            original_lines = (this['normalize'](i).strip() for i in _file.readlines())
+        generated_line= next(generated_lines)
+        original_line = next(original_lines)
+        while generated_line and original_line:
+            original_i += 1
+            generated_i+= 1
+            log.append('o{}:{}\ng{}:{}'.format(original_i, original_line, generated_i, generated_line))
+            if (len(log) > counter) and (not flag):
+                log.pop(0)
+            if (len(log) > 2 * counter - 1) and flag:
+                print('\n'.join(log) + '\no:Original rst / g:Generated rst')
+                raise Exception('Differences found at {} line!'.format(flag))
+            if original_line == '' and generated_line == '':
+                pass
+            elif original_line != '' and generated_line == '':
+                while generated_line == '':
+                    generated_line = next(generated_lines)
+                    generated_i += 1
+            elif original_line == '' and generated_line != '':
+                while original_line == '':
+                    original_line = next(original_lines)
+                    original_i += 1
+            else:
+                if this['pattern'].search(original_line):
                     pass
-
-                if this['normalize'](line) == '' and new_line == '':
-                    new_line = next(generated_line)
-                    continue
-                elif this['normalize'](line) != '' and new_line == '':
-                    while new_line == '':
-                        new_line = next(generated_line)
-                elif this['normalize'](line) == '' and new_line != '':
-                    continue
-                else:
-                    if this['pattern'].search(line):
-                        new_line = next(generated_line)
-                        continue
-                    if (this['normalize'](line).strip() != new_line.strip()) and (not flag):
-                        flag = num # up flag
-                    new_line = next(generated_line)
+                elif (original_line != generated_line) and (not flag):
+                    flag = 'o{}/g{}'.format(original_i, generated_i) # up flag
+            generated_line = next(generated_lines)
+            original_line = next(original_lines)
 
     @staticmethod
     def make_content():
