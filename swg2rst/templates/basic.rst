@@ -64,7 +64,7 @@
 
 {{ 'Security'|header(2) }}
 
-    {% for security in doc.security_definitions.values() %}
+    {% for _, security in doc.sorted(doc.security_definitions) %}
 
 .. _{{ 'securities_{}'.format(security.name) }}:
 
@@ -130,7 +130,7 @@
 
     {% endif %}
 
-    {% for operation in operations %}
+    {% for operation in doc.sorted(operations) %}
 {% set definition_suffix = (tag + operation.operation_id) if inline else '' %}
 
 {{ '{} ``{}``'.format(operation.method.upper(), operation.path)|header(3) }}

@@ -1,6 +1,6 @@
 import json
 import re
-from collections import defaultdict
+from collections import defaultdict, Mapping, Iterable
 from hashlib import md5
 from operator import attrgetter
 
@@ -745,6 +745,24 @@ class AbstractTypeObject(object):
         :return: Type, format and internal properties of property
         :rtype: tuple(str, str, dict)
         """
+
+        def convert(data):
+            '''
+            Convert from unicode to native ascii
+            '''
+            try:
+                st = basestring
+            except NameError:
+                st = str
+            if isinstance(data, st):
+                return str(data)
+            elif isinstance(data, Mapping):
+                return dict(map(convert, data.iteritems()))
+            elif isinstance(data, Iterable):
+                return type(data)(map(convert, data))
+            else:
+                return data
+
         property_type = property_obj.get('type', 'object')
         property_format = property_obj.get('format')
         property_dict = dict()
@@ -777,7 +795,7 @@ class AbstractTypeObject(object):
             property_dict['min_length'] = property_obj['minLength']
 
         if 'enum' in property_obj:
-            property_dict['enum'] = property_obj['enum']
+            property_dict['enum'] = convert(property_obj['enum'])
 
         if 'additionalProperties' in property_obj:
             _property_type, _property_format, _property_dict = self.get_type_properties(

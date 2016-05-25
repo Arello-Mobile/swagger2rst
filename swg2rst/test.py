@@ -58,10 +58,9 @@ class BaseSwaggerTestCase(object):
 
     def test_security_definitions(self):
         if 'securityDefinitions' in self.swagger_doc.raw:
-            self.assertSequenceEqual(
-                self.swagger_doc.raw['securityDefinitions'].keys(),
-                self.swagger_doc.security_definitions.keys()
-            )
+            getting  = sorted(self.swagger_doc.raw['securityDefinitions'].keys())
+            expected = sorted(self.swagger_doc.security_definitions.keys()) 
+            self.assertSequenceEqual(getting, expected)
 
     def test_doc_security(self):
         if 'security' in self.swagger_doc.raw:
@@ -266,16 +265,38 @@ class RSTIntegrationsTestCase(TestCase):
 
     @staticmethod
     def run_integration(this):
+        log = []
+        flag = None
+        counter = 5
         generated_line = (i for i in this['raw_rst'].split('\n'))
         with codecs.open(this['file_name_rst'], 'r', encoding='utf-8') as _file:
+            new_line = next(generated_line)
             for num, line in enumerate(_file):
-                new_line = next(generated_line)
-                '''More strict with commets'''
-                if this['pattern'].search(line):
+                log.append('{num}:{}\n{num}:{}'.format(repr(this['normalize'](line)), repr(new_line), num=num))
+                if (len(log) > counter) and (not flag):
+                    log.pop(0)
+                if (len(log) > 2 * counter - 1) and flag:
+                    print('\n'.join(log))
+                    raise Exception('Differences found at {} line!'.format(flag))
+
+                if num == 3850:
+                    pass
+
+                if this['normalize'](line) == '' and new_line == '':
+                    new_line = next(generated_line)
                     continue
-                print ('{num}:{}\n{num}:{}'.format(repr(this['normalize'](line)), repr(new_line), num=num))
-                if this['normalize'](line).strip() != new_line.strip():
-                    raise Exception('Differences found at {} line'.format(num))
+                elif this['normalize'](line) != '' and new_line == '':
+                    while new_line == '':
+                        new_line = next(generated_line)
+                elif this['normalize'](line) == '' and new_line != '':
+                    continue
+                else:
+                    if this['pattern'].search(line):
+                        new_line = next(generated_line)
+                        continue
+                    if (this['normalize'](line).strip() != new_line.strip()) and (not flag):
+                        flag = num # up flag
+                    new_line = next(generated_line)
 
     @staticmethod
     def make_content():
@@ -389,13 +410,16 @@ Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
     def test_additionalProp(self):
         file_name = 'additionalProperties'
         this = self.prepare_env(file_name)
-        print(this['raw_rst'])
         self.run_integration(this)
 
     def test_intergation_allOf(self):
         file_name = 'allOf'
         this = self.prepare_env(file_name)
-        print(this['raw_rst'])
+        self.run_integration(this)
+
+    def test_intergation_instagram(self):
+        file_name = 'instagram'
+        this = self.prepare_env(file_name)
         self.run_integration(this)
 
 

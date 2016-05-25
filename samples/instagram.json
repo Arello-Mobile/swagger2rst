@@ -70,6 +70,10 @@
             "type": "apiKey",
             "in": "query",
             "name": "access_token"
+        },
+        "default": {
+            "type": "basic",
+            "description": "Example with basic auth"
         }
     },
     "security": [
@@ -83,6 +87,9 @@
         },
         {
             "key": []
+        },
+        {
+            "default": []
         }
     ],
     "parameters": {
@@ -112,6 +119,9 @@
                 "security": [
                     {
                         "key": []
+                    },
+                    {
+                        "default": []
                     },
                     {
                         "oauth": [

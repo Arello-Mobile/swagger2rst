@@ -204,6 +204,3 @@ RecordingSerializer Model Structure
         phrase_id | Yes | integer |  |  |  
         record_id | Yes | integer |  |  |  
         recording | Yes | string |  |  |  
-
-
-

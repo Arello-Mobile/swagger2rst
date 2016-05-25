@@ -11,6 +11,7 @@ from swg2rst.swagger import SchemaObjects
 from swg2rst.swagger import SchemaMapWrapper
 from swg2rst.swagger import PRIMITIVE_TYPES
 from swg2rst.swagger import SchemaTypes
+from swg2rst.swagger import Operation
 from json import dumps
 
 HEADERS = {1: '=', 2: '~', 3: '-', 4: '+', 5: '^'}
@@ -21,16 +22,28 @@ class SwaggerObject(BaseSwaggerObject):
     @staticmethod
     def sorted(collection):
         '''
-        sorting dict by value,
-        sorting schema-collection by key
+        sorting dict by key,
+        schema-collection by schema-name
+        operations by id
         '''
+        if len(collection) < 1:
+            return collection
+
         if isinstance(collection, dict):
             return sorted(collection.items(), key=lambda x:x[0])
+
         tmp = {}
-        for item in collection:
-            tmp[item] = SchemaObjects.get(item).name
-        tmp2 = sorted(tmp.items(), key=lambda x:x[1])
-        return (x[0] for x in tmp2)
+        if isinstance(list(collection)[0], Operation):
+            for item in collection:
+                tmp[item.operation_id] = item
+            tmp = sorted(tmp.items(), key=lambda x: x[0])
+            return (x[1] for x in tmp)
+
+        if isinstance(list(collection)[0], str):
+            for item in collection:
+                tmp[item] = SchemaObjects.get(item).name
+            tmp = sorted(tmp.items(), key=lambda x: x[1])
+            return (x[0] for x in tmp)
 
     def get_regular_properties(self, _type, *args, **kwargs):
         if not SchemaObjects.contains(_type):
