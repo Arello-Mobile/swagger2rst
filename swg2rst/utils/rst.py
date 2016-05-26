@@ -41,7 +41,10 @@ class SwaggerObject(BaseSwaggerObject):
 
         if isinstance(list(collection)[0], str):
             for item in collection:
-                tmp[item] = SchemaObjects.get(item).name
+                if SchemaObjects.get(item):
+                    tmp[item] = SchemaObjects.get(item).name
+                else:
+                    print 'Something wrong with schema {}'.format(item)
             tmp = sorted(tmp.items(), key=lambda x: x[1])
             return (x[0] for x in tmp)
 
