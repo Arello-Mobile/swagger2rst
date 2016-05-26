@@ -1060,7 +1060,8 @@ class SchemaMapWrapper(Schema):
 
     @staticmethod
     def wrap(schema):
-        schema.__class__ = SchemaMapWrapper
+        if isinstance(schema, Schema):
+            schema.__class__ = SchemaMapWrapper
 
 class SecurityDefinition(object):
     """ Represents Swagger Security Scheme Object
