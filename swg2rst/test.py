@@ -11,6 +11,7 @@ from unittest import TestCase, SkipTest, main
 
 from swg2rst import swagger
 from swg2rst.utils import rst
+from swg2rst.utils import exampilators
 try:
     import simplejson as json
 except ImportError:
@@ -146,14 +147,14 @@ class BaseSwaggerTestCase(object):
                 self.assertEqual(self.exampilator.DEFAULT_EXAMPLES[_type], value)
         else:
             self.assertDictEqual(
-                self.exampilator.DEFAULT_EXAMPLES, swagger._DEFAULT_EXAMPLES)
+                self.exampilator.DEFAULT_EXAMPLES, exampilators._DEFAULT_EXAMPLES)
 
         if 'array_items_count' in self.examples:
             self.assertEqual(self.exampilator.EXAMPLE_ARRAY_ITEMS_COUNT,
                              self.examples['array_items_count'])
 
         integer_example = self.examples['types'].get(
-            'integer', swagger._DEFAULT_EXAMPLES['integer'])
+            'integer', exampilators._DEFAULT_EXAMPLES['integer'])
         len_examples =  self.examples.get('array_items_count', 2)
 
         self.assertEqual(
