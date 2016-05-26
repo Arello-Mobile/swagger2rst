@@ -959,6 +959,7 @@ class Schema(AbstractTypeObject):
         super(Schema, self).__init__(obj, **kwargs)
         self.nested_schemas = set()
         self.schema_type = schema_type
+        self.description = obj.get('description', '').replace('"', '\'')
         self._type = obj.get('type', 'object')
         # assert self._type in ('array', 'object')
 

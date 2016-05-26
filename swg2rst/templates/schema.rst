@@ -1,6 +1,8 @@
 {% if not (internal_call and schema.is_array) -%}
 {{- schema_header }}
-
+    {% if schema.description %}
+        {{- schema.description }}
+    {% endif %}
 
     {% if schema.items -%}
 {{- doc.get_type_description(schema.item['type'], definition_suffix) -}}

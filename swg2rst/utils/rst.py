@@ -1,4 +1,6 @@
 # coding: utf-8
+
+import sys
 try:
     import pypandoc
 except ImportError:
@@ -44,7 +46,7 @@ class SwaggerObject(BaseSwaggerObject):
                 if SchemaObjects.get(item):
                     tmp[item] = SchemaObjects.get(item).name
                 else:
-                    print 'Something wrong with schema {}'.format(item)
+                    sys.stderr.write('Something wrong with schema {}\n'.format(item))
             tmp = sorted(tmp.items(), key=lambda x: x[1])
             return (x[0] for x in tmp)
 
