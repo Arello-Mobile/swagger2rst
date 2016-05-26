@@ -15,7 +15,8 @@ _DEFAULT_EXAMPLES = {
 }
 
 class Exampilator(object):
-    """ Example Manager
+    """
+    Example Manager
     """
 
     DEFAULT_EXAMPLES = _DEFAULT_EXAMPLES.copy()
@@ -23,14 +24,16 @@ class Exampilator(object):
     EXAMPLE_ARRAY_ITEMS_COUNT = 2
     PRIMITIVE_TYPES = None
     schemas = None
+    wrapper = None
 
     logger = get_logger()
     _json_format_checker = FormatChecker()
-    
+
     @classmethod
-    def __init__(cls, PRIMITIVE_TYPES, SchemaObjects):
+    def __init__(cls, PRIMITIVE_TYPES, SchemaObjects, SchemaMapWrapper):
         cls.PRIMITIVE_TYPES = PRIMITIVE_TYPES
         cls.schemas = SchemaObjects
+        cls.wrapper = SchemaMapWrapper
 
     @classmethod
     def fill_examples(cls, examples):
@@ -154,7 +157,7 @@ class Exampilator(object):
                     result.update(cls.get_example_by_schema(schema, **kwargs))
             else:
                 result = cls.get_example_for_object(
-                    schema.properties, **kwargs)
+                    schema.properties, nested=schema.nested_schemas, **kwargs)
         return result
 
     @classmethod
@@ -203,7 +206,7 @@ class Exampilator(object):
         return {header.name: result}
 
     @classmethod
-    def get_property_example(cls, property_, **kw):
+    def get_property_example(cls, property_, nested=None, **kw):
         """ Get example for property
 
         :param dict property_:
@@ -232,6 +235,17 @@ class Exampilator(object):
                             'Example type mismatch in path {}'.format(schema.ref_path))
             else:
                 result = cls.get_example_by_schema(schema, **kw)
+
+            if (not result) and schema.nested_schemas:
+                for _schema_id in schema.nested_schemas:
+                    _schema = cls.schemas.get(_schema_id)
+                    if isinstance(_schema, cls.wrapper):
+                        result[_schema.name] = cls.get_example_by_schema(_schema, **kw)
+                    elif _schema.nested_schemas:
+                        for _schema__id in _schema.nested_schemas:
+                            _schema_ = cls.schemas.get(_schema__id)
+                            if isinstance(_schema_, cls.wrapper):
+                                result[_schema.name] = cls.get_example_by_schema(_schema_, **kw)
         else:
             result = cls.get_example_value_for_primitive_type(
                 property_['type'],
@@ -254,13 +268,13 @@ class Exampilator(object):
         return [cls.get_property_example(obj_item, **kw)] * cls.EXAMPLE_ARRAY_ITEMS_COUNT
 
     @classmethod
-    def get_example_for_object(cls, properties, **kw):
+    def get_example_for_object(cls, properties, nested=None, **kw):
         result = {}
         if properties:
             for _property in properties:
                 kw['name'] = _property['name']
                 result[_property['name']] = cls.get_property_example(
-                    _property, **kw)
+                    _property, nested=nested, **kw)
         return result
 
     @classmethod

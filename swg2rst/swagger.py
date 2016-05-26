@@ -265,7 +265,7 @@ class BaseSwaggerObject(SecurityMixin):
         self.raw = obj
         self.exampilator = exampilator or Exampilator
         assert issubclass(self.exampilator, Exampilator)
-        self.exampilator(PRIMITIVE_TYPES, SchemaObjects)
+        self.exampilator(PRIMITIVE_TYPES, SchemaObjects, SchemaMapWrapper)
         if examples:
             try:
                 self.exampilator.schema_validate(examples, examples_json_schema)
