@@ -1,3 +1,4 @@
+{% set _ = exists_schema.append(schema_id) %}
 {% if not (internal_call and schema.is_array) -%}
 {{- schema_header }}
     {% if schema.description %}
@@ -17,7 +18,7 @@
 {%- endif %}
 
 
-{% for schema_id in doc.sorted(schema.nested_schemas) -%}
+{% for schema_id in doc.sorted(schema.nested_schemas) if schema_id not in exists_schema -%}
     {% set schema = doc.schemas.get(schema_id) %}
     {% set internal_call = True %}
     {% set schema_header = '**{} schema:**\n'.format(schema.name.capitalize()) %}
