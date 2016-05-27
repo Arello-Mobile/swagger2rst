@@ -56,8 +56,13 @@
 
 {{ 'Base URL'|header(2) }}
 
+{% if doc.schemes %}
+    {% for scheme in doc.schemes %}
+{{ '{}://{}{}'.format(scheme, doc.host, doc.base_path) }}
+    {% endfor %}
+{% else %}
 {{ 'http://{}{}'.format(doc.host, doc.base_path) }}
-
+{% endif %}
 {% endif -%}
 
 {% if doc.security_definitions %}
