@@ -240,11 +240,11 @@ class RSTIntegrationsTestCase(TestCase):
     Testing rst-specific methods
     '''
     @staticmethod
-    def prepare_env(cnt, file_name=True):
+    def prepare_env(cnt, file_name=True, inline=False):
         this = {}
         if file_name:
             this['file_name_json'] = os.path.join(SAMPLES_PATH, '{}.json'.format(cnt))
-            this['file_name_rst']  = os.path.join(SAMPLES_PATH, '{}.rst'.format(cnt))
+            this['file_name_rst']  = os.path.join(SAMPLES_PATH, '{}{inline}.rst'.format(cnt, inline='_inline' if inline else ''))
             with codecs.open(this['file_name_json'], 'r', encoding='utf-8') as _file:
                 doc = json.load(_file)
         else:
@@ -259,7 +259,7 @@ class RSTIntegrationsTestCase(TestCase):
             jinja_env.filters[name] = function
         jinja_env.filters['sorted'] = sorted
         template = jinja_env.get_template('basic.rst')
-        this['raw_rst'] = template.render(doc=this['swagger_doc'])
+        this['raw_rst'] = template.render(doc=this['swagger_doc'], inline=inline)
         this['pattern'] = re.compile(r'[idm]_\w{32}')
         this['normalize'] = lambda x: x[:-1] if x[-1] == '\n' else x
         return this
@@ -430,6 +430,15 @@ Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
     def test_intergation_instagram(self):
         file_name = 'instagram'
         this = self.prepare_env(file_name)
+        self.run_integration(this)
+
+    def test_intergation_instagram_inline(self):
+        file_name = 'instagram'
+        this = self.prepare_env(file_name, inline=True)
+        # with codecs.open('/home/ibogomolov/workspace/swagger2rst/samples/instagram_inline.rst', 'w', encoding='utf-8') as f:
+        #     f.write(this['raw_rst'])
+        # with codecs.open('/home/ibogomolov/workspace/swagger2rst/samples/tmp.rst', 'w', encoding='utf-8') as f:
+        #     f.write(this['raw_rst'])
         self.run_integration(this)
 
 

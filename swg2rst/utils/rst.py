@@ -151,15 +151,6 @@ def md2rst(obj):
     else:
         return obj.replace('```', '\n')
 
+
 def json_dumps(obj, *args, **kwargs):
-
-    def sorter(obj):
-        if isinstance(obj, dict):
-            res = SwaggerObject.sorted(obj)
-            for num, chunk in enumerate(res):
-                res[num] = (chunk[0], sorter(chunk[1]))
-            return dict(res) # <-- orederedDict needed
-        return obj
-
-    # res = sorter(obj)
     return dumps(obj, sort_keys=True, indent=kwargs.get('indent'))

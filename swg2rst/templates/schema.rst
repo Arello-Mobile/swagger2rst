@@ -1,7 +1,7 @@
 {% if not (internal_call and schema.is_array) -%}
 {{- schema_header }}
     {% if schema.description %}
-        {{- schema.description }}
+{{ schema.description }}
     {% endif %}
 
     {% if schema.items -%}
@@ -20,7 +20,7 @@
 {% for schema_id in doc.sorted(schema.nested_schemas) -%}
     {% set schema = doc.schemas.get(schema_id) %}
     {% set internal_call = True %}
-    {% set schema_header = '**{} schema:**'.format(schema.name.capitalize()) %}
+    {% set schema_header = '**{} schema:**\n'.format(schema.name.capitalize()) %}
     {% if schema.is_inline and not inline %}
 
         {%- include "schema.rst" -%}
