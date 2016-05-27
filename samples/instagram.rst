@@ -208,7 +208,7 @@ License
 Base URL
 ~~~~~~~~
 
-http://api.instagram.com/v1
+https://api.instagram.com/v1
 
 
 Security
