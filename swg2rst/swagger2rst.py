@@ -87,7 +87,7 @@ def main(from_script=True):
     else:
         jinja_env.loader = PackageLoader('swg2rst')
         try:
-            template = jinja_env.get_template('basic.{}'.format(args.format))
+            template = jinja_env.get_template('main.{}'.format(args.format))
         except TemplateError as err:
             sys.exit(u'Template Error: {}'.format(err.message))
 

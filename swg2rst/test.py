@@ -258,7 +258,7 @@ class RSTIntegrationsTestCase(TestCase):
         for name, function in inspect.getmembers(doc_module, inspect.isfunction):
             jinja_env.filters[name] = function
         jinja_env.filters['sorted'] = sorted
-        template = jinja_env.get_template('basic.rst')
+        template = jinja_env.get_template('main.rst')
         this['raw_rst'] = template.render(doc=this['swagger_doc'], inline=inline)
         this['pattern'] = re.compile(r'[idm]_\w{32}')
         this['normalize'] = lambda x: x[:-1] if x[-1] == '\n' else x
