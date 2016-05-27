@@ -235,7 +235,19 @@
                 {% set basic = False %} {# used for recursion count #}
 
                 {% if not schema.is_inline or schema.is_array %}
-Type: {{ doc.get_type_description(response.type) }}
+Type: {{ doc.get_type_description(response.type, definition_suffix) }}
+
+                {% if inline %}
+                    {% set temp_schema = doc.schemas.get(response.type) -%}
+                    {{ '**{} schema:**\n'.format(temp_schema.name.capitalize()) }}
+                    {% if schema.is_array %}
+{{ doc.get_regular_properties(temp_schema.item['type'], definition_suffix, definition=True) }}
+                    {% elif schema.properties %}
+{{ doc.get_regular_properties(response.type, definition_suffix, definition=True) }}
+                    {% else %}
+{{ doc.get_additional_properties(schema.schema_id, definition_suffix) }}
+                    {% endif %}
+                {% endif %}
                 {% else %}
 
 {%- include "schema.rst" -%}

@@ -19,13 +19,18 @@
 
 {% for schema_id in doc.sorted(schema.nested_schemas) -%}
     {% set schema = doc.schemas.get(schema_id) %}
-    {# if (not inline and schema.is_inline) or (inline and schema_id not in exists_schema) #}
-    {% if schema.is_inline %}
-        {% set schema_header = '**{} schema:**'.format(schema.name.capitalize()) %}
-        {% set internal_call = True %}
+    {% set internal_call = True %}
+    {% set schema_header = '**{} schema:**'.format(schema.name.capitalize()) %}
+    {% if schema.is_inline and not inline %}
 
         {%- include "schema.rst" -%}
 
-        {% set internal_call = False %}
+    {% elif inline %}
+        {% set definition = True %}
+
+        {%- include "schema.rst" -%}
+
+        {% set definition = False %}
     {% endif %}
+    {% set internal_call = False %}    
 {%- endfor %}

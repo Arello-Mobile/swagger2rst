@@ -239,13 +239,14 @@ class Exampilator(object):
             if (not result) and schema.nested_schemas:
                 for _schema_id in schema.nested_schemas:
                     _schema = cls.schemas.get(_schema_id)
-                    if isinstance(_schema, cls.wrapper):
-                        result[_schema.name] = cls.get_example_by_schema(_schema, **kw)
-                    elif _schema.nested_schemas:
-                        for _schema__id in _schema.nested_schemas:
-                            _schema_ = cls.schemas.get(_schema__id)
-                            if isinstance(_schema_, cls.wrapper):
-                                result[_schema.name] = cls.get_example_by_schema(_schema_, **kw)
+                    if _schema:
+                        if isinstance(_schema, cls.wrapper):
+                            result[_schema.name] = cls.get_example_by_schema(_schema, **kw)
+                        elif _schema.nested_schemas:
+                            for _schema__id in _schema.nested_schemas:
+                                _schema_ = cls.schemas.get(_schema__id)
+                                if isinstance(_schema_, cls.wrapper):
+                                    result[_schema.name] = cls.get_example_by_schema(_schema_, **kw)
         else:
             result = cls.get_example_value_for_primitive_type(
                 property_['type'],

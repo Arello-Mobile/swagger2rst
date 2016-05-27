@@ -67,16 +67,17 @@ class SwaggerObject(BaseSwaggerObject):
 
 '''.format(schema.schema_id, args[0] if args else '')
         body = []
-        for p in schema.properties:
-            body.append('        {} | {} | {} | {} | {} | {} \n'.format(
-                p.get('name') or '',
-                'Yes' if p.get('required') else 'No',
-                self.get_type_description(p['type'], *args, **kwargs),
-                p.get('type_format') or '',
-                '{}'.format(p.get('type_properties') or ''),
-                p.get('description') or '')
-            )
-        body.sort()
+        if schema.properties:
+            for p in schema.properties:
+                body.append('        {} | {} | {} | {} | {} | {} \n'.format(
+                    p.get('name') or '',
+                    'Yes' if p.get('required') else 'No',
+                    self.get_type_description(p['type'], *args, **kwargs),
+                    p.get('type_format') or '',
+                    '{}'.format(p.get('type_properties') or ''),
+                    p.get('description') or '')
+                )
+            body.sort()
         return head + ''.join(body)
 
     def get_type_description(self, _type, *args, **kwargs):
