@@ -1,5 +1,11 @@
+from swg2rst.converter_exceptions import ConverterError
+from .abstractTypeObject import AbstractTypeObject
+from .constants import PRIMITIVE_TYPES
+
+
 class Header(AbstractTypeObject):
-    """ Represents Swagger Header Object
+    """
+    Represents Swagger Header Object
     """
 
     def __init__(self, obj, **kwargs):

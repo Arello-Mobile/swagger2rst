@@ -1,7 +1,10 @@
+from .constants import SecurityTypes
+
+
 class SecurityDefinition(object):
-    '''
+    """
     Represents Swagger Security Scheme Object
-    '''
+    """
     scopes = None
     location_in = None
     param_name = None

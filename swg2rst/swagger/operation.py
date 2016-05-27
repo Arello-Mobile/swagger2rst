@@ -1,5 +1,14 @@
+import re
+from swg2rst.converter_exceptions import ConverterError
+from cached_property import cached_property
+from .securityMixin import SecurityMixin
+from .parameter import Parameter
+from .response import Response
+
+
 class Operation(SecurityMixin):
-    """ Represents Swagger Operation Object
+    """
+    Represents Swagger Operation Object
     """
     parameters = None
     responses = None

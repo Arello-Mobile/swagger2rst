@@ -1,3 +1,7 @@
+from .schema import Schema
+from .constants import SchemaTypes
+
+
 class SchemaMapWrapper(Schema):
     """Dedicated class to store AdditionalProperties in schema
     """

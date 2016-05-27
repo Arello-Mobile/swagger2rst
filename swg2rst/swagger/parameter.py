@@ -1,3 +1,8 @@
+from swg2rst.converter_exceptions import ConverterError
+from .abstractTypeObject import AbstractTypeObject
+from .constants import SchemaTypes
+
+
 class Parameter(AbstractTypeObject):
     """ Represents Swagger Parameter Object
     """
