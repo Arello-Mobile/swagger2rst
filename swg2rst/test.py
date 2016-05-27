@@ -266,20 +266,26 @@ class RSTIntegrationsTestCase(TestCase):
 
     @staticmethod
     def run_integration(this):
+        def iterate(generator, index):
+            try:
+                result = next(generator) or ' '
+            except StopIteration:
+                result = None
+            index += 1
+            return result, index
+
         log = []
         flag = None
         counter = 5
-        original_i  = 0
+        original_i = 0
         generated_i = 0
         generated_lines = (i.strip() for i in this['raw_rst'].split('\n'))
         with codecs.open(this['file_name_rst'], 'r', encoding='utf-8') as _file:
             original_lines = (this['normalize'](i).strip() for i in _file.readlines())
-        generated_line= next(generated_lines) or ' '
-        original_line = next(original_lines) or ' '
+        original_line, original_i = iterate(original_lines, original_i)
+        generated_line, generated_i = iterate(generated_lines, generated_i)
         while generated_line or original_line:
-            original_i += 1
-            generated_i+= 1
-            log.append('o{}:{}\ng{}:{}'.format(original_i, original_line, generated_i, generated_line))
+            log.append('o{}:{}\ng{}:{}'.format(original_i, repr(original_line), generated_i, repr(generated_line)))
             if (len(log) > counter) and (not flag):
                 log.pop(0)
             if (len(log) > 2 * counter - 1) and flag:
@@ -289,31 +295,18 @@ class RSTIntegrationsTestCase(TestCase):
                 pass
             elif original_line != ' ' and generated_line == ' ':
                 while generated_line == ' ':
-                    try:
-                        generated_line = next(generated_lines) or ' '
-                    except StopIteration:
-                        generated_line = None
-                    generated_i += 1
+                    generated_line, generated_i = iterate(generated_lines, generated_i)
             elif original_line == ' ' and generated_line != ' ':
                 while original_line == ' ':
-                    try:
-                        original_line = next(original_lines) or ' '
-                    except StopIteration:
-                        original_line = None
-                    original_i += 1
+                    original_line, original_i = iterate(original_lines, original_i)
             else:
                 if this['pattern'].search(original_line):
                     pass
                 elif (original_line != generated_line) and (not flag):
                     flag = 'o{}/g{}'.format(original_i, generated_i) # up flag
-            try:
-                generated_line = next(generated_lines) or ' '
-            except StopIteration:
-                generated_line = None
-            try:
-                original_line = next(original_lines) or ' '
-            except StopIteration:
-                original_line = None
+
+            original_line, original_i = iterate(original_lines, original_i)
+            generated_line, generated_i = iterate(generated_lines, generated_i)
 
     @staticmethod
     def make_content():
@@ -437,7 +430,7 @@ Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
     def test_intergation_instagram(self):
         file_name = 'instagram'
         this = self.prepare_env(file_name)
-        # self.run_integration(this)
+        self.run_integration(this)
 
 
 if __name__ == '__main__':
