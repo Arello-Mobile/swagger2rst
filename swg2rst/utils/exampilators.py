@@ -7,7 +7,7 @@ from swg2rst.swagger.constants import PRIMITIVE_TYPES
 from swg2rst.swagger.schemaObjects import SchemaObjects
 from swg2rst.swagger.schema import SchemaMapWrapper
 
-_DEFAULT_EXAMPLES = {
+DEFAULT_EXAMPLES = {
     'integer': 1,
     'number': 1.0,
     'string': 'somestring',
@@ -17,12 +17,13 @@ _DEFAULT_EXAMPLES = {
     'password': '*****',
 }
 
+
 class Exampilator(object):
     """
     Example Manager
     """
 
-    DEFAULT_EXAMPLES = _DEFAULT_EXAMPLES.copy()
+    DEFAULT_EXAMPLES = DEFAULT_EXAMPLES.copy()
     CUSTOM_EXAMPLES = dict()
     EXAMPLE_ARRAY_ITEMS_COUNT = 2
 
@@ -88,7 +89,7 @@ class Exampilator(object):
             result = properties['minimum']
             if properties.get('exclusive_minimum', False):
                 result += 1
-        elif properties.get('maximum') is not None and result > properties['maximum'] :
+        elif properties.get('maximum') is not None and result > properties['maximum']:
             result = properties['maximum']
             if properties.get('exclusive_maximum', False):
                 result -= 1
@@ -204,9 +205,10 @@ class Exampilator(object):
         """ Get example for property
 
         :param dict property_:
+        :param set nested:
         :return: example value
         """
-        paths = kw.get('paths', None)
+        paths = kw.get('paths', [])
         name = kw.get('name', '')
         result = None
         if name and paths:

@@ -88,7 +88,7 @@ class AbstractTypeObject(object):
         if (schema_type == SchemaTypes.prefixes[SchemaTypes.MAPPED]) and ('$ref' in obj):
             base = obj['$ref']
             prefix = schema_type
-        elif ('$ref' in obj):
+        elif '$ref' in obj:
             base = obj['$ref']
             prefix = SchemaTypes.prefixes[SchemaTypes.DEFINITION]
         else:
@@ -102,6 +102,7 @@ class AbstractTypeObject(object):
         Schema will create, if it doesn't exists in collection
 
         :param dict schema_obj: raw schema object
+        :param str schema_type:
         """
         schema_id = self._get_object_schema_id(schema_obj, schema_type)
 

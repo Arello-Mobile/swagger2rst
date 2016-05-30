@@ -22,16 +22,16 @@ class SwaggerObject(BaseSwaggerObject):
 
     @staticmethod
     def sorted(collection):
-        '''
+        """
         sorting dict by key,
         schema-collection by schema-name
         operations by id
-        '''
+        """
         if len(collection) < 1:
             return collection
 
         if isinstance(collection, dict):
-            return sorted(collection.items(), key=lambda x:x[0])
+            return sorted(collection.items(), key=lambda x: x[0])
 
         tmp = {}
         if isinstance(list(collection)[0], Operation):
@@ -57,14 +57,14 @@ class SwaggerObject(BaseSwaggerObject):
         if schema.schema_type == SchemaTypes.DEFINITION:
             if not kwargs.get('definition'):
                 return ''
-        head = '''.. _{}{}:
+        head = """.. _{}{}:
 
 .. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-'''.format(schema.schema_id, args[0] if args else '')
+""".format(schema.schema_id, args[0] if args else '')
         body = []
         if schema.properties:
             for p in schema.properties:
@@ -81,9 +81,7 @@ class SwaggerObject(BaseSwaggerObject):
 
     def get_type_description(self, _type, *args, **kwargs):
         """ Get description of type
-
         :param str _type:
-        :param post_callback:
         :rtype: str
         """
         if not SchemaObjects.contains(_type):
@@ -120,7 +118,9 @@ class SwaggerObject(BaseSwaggerObject):
                 if not nested_schema:
                     return 'Error:\n{}'.format(repr(nested_schema))
                 if isinstance(nested_schema, SchemaMapWrapper):
-                    body.append('Map of {{"key":"{}"}}\n\n'.format(self.get_type_description(nested_schema.schema_id, *args, **kwargs)))
+                    body.append('Map of {{"key":"{}"}}\n\n'.format(self.get_type_description(
+                        nested_schema.schema_id, *args, **kwargs))
+                    )
                     if nested_schema.item and nested_schema.item.get('type'):
                         if (nested_schema.item['type'] not in PRIMITIVE_TYPES) \
                                 and (nested_schema.item['type'][0] != SchemaTypes.DEFINITION[0]):
@@ -151,5 +151,5 @@ def md2rst(obj):
         return obj.replace('```', '\n')
 
 
-def json_dumps(obj, *args, **kwargs):
+def json_dumps(obj, **kwargs):
     return dumps(obj, sort_keys=True, indent=kwargs.get('indent'))

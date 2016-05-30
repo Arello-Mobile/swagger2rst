@@ -124,18 +124,22 @@ class BaseSwaggerObject(SecurityMixin):
                     }
 
     def _fill_schemas_from_definitions(self, obj):
+        """At first create schemas without 'AllOf'
+        :param obj:
+        :return: None
+        """
         self.schemas.clear()
-        allOf_stack = []
+        all_of_stack = []
         for name, definition in obj.items():
             if 'allOf' in definition:
-                allOf_stack.append( (name, definition) )
+                all_of_stack.append((name, definition))
             else:
                 self.schemas.create_schema(
                     definition, name, SchemaTypes.DEFINITION, root=self)
-        while allOf_stack:
-            name, definition = allOf_stack.pop(0)
-            new_schema = Schema(definition, 'definition', name=name, root=self)
-            self.schemas._schemas[new_schema.schema_id] = new_schema
+        while all_of_stack:
+            name, definition = all_of_stack.pop(0)
+            self.schemas.create_schema(
+                definition, name, SchemaTypes.DEFINITION, root=self)
 
     def _fill_parameter_definitions(self, obj):
         self.parameter_definitions = {}

@@ -65,7 +65,9 @@ class Schema(AbstractTypeObject):
                     if schema:
                         result_obj = self.storage.merge_schemas(self.storage.get(self.all_of[-1]), schema)
                     else:
-                        result_obj = self.storage.merge_schemas(self.storage.get(self.all_of[-1]), self.storage.get(_id))
+                        result_obj = self.storage.merge_schemas(
+                            self.storage.get(self.all_of[-1]), self.storage.get(_id)
+                        )
                 self.all_of.append(_id)
                 self.nested_schemas.add(_id)
 

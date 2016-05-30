@@ -5,7 +5,7 @@ import functools
 import os, re
 import inspect
 import importlib
-from io import StringIO as file_obj
+from io import StringIO as File_obj
 from jinja2 import Environment, PackageLoader, FileSystemLoader, TemplateError
 from unittest import TestCase, SkipTest, main
 
@@ -62,8 +62,8 @@ class BaseSwaggerTestCase(object):
 
     def test_security_definitions(self):
         if 'securityDefinitions' in self.swagger_doc.raw:
-            getting  = sorted(self.swagger_doc.raw['securityDefinitions'].keys())
-            expected = sorted(self.swagger_doc.security_definitions.keys()) 
+            getting = sorted(self.swagger_doc.raw['securityDefinitions'].keys())
+            expected = sorted(self.swagger_doc.security_definitions.keys())
             self.assertSequenceEqual(getting, expected)
 
     def test_doc_security(self):
@@ -150,21 +150,20 @@ class BaseSwaggerTestCase(object):
                 self.assertEqual(self.exampilator.DEFAULT_EXAMPLES[_type], value)
         else:
             self.assertDictEqual(
-                self.exampilator.DEFAULT_EXAMPLES, exampilators._DEFAULT_EXAMPLES)
+                self.exampilator.DEFAULT_EXAMPLES, exampilators.DEFAULT_EXAMPLES)
 
         if 'array_items_count' in self.examples:
             self.assertEqual(self.exampilator.EXAMPLE_ARRAY_ITEMS_COUNT,
                              self.examples['array_items_count'])
 
         integer_example = self.examples['types'].get(
-            'integer', exampilators._DEFAULT_EXAMPLES['integer'])
+            'integer', exampilators.DEFAULT_EXAMPLES['integer'])
         len_examples = self.examples.get('array_items_count', 2)
 
         self.assertEqual(
             self.exampilator.get_example_for_array(
                 {'type': 'integer', 'type_properties': {}, 'type_format': None}),
             [integer_example] * len_examples)
-
 
     def _test_parameters(self, operation_obj, operation, params_count):
         if 'parameters' in operation_obj:
@@ -239,20 +238,22 @@ class InstagramTestCase(BaseSwaggerTestCase, TestCase):
 
 
 class RSTIntegrationsTestCase(TestCase):
-    '''
+    """
     Testing rst-specific methods
-    '''
+    """
     @staticmethod
     def prepare_env(cnt, file_name=True, inline=False):
         this = {}
         if file_name:
             this['file_name_json'] = os.path.join(SAMPLES_PATH, '{}.json'.format(cnt))
-            this['file_name_rst']  = os.path.join(SAMPLES_PATH, '{}{inline}.rst'.format(cnt, inline='_inline' if inline else ''))
+            this['file_name_rst'] = os.path.join(SAMPLES_PATH,\
+                                                 '{}{inline}.rst'.format(cnt, inline='_inline' if inline else '')
+                                                 )
             with codecs.open(this['file_name_json'], 'r', encoding='utf-8') as _file:
                 doc = json.load(_file)
         else:
             this['file_name_json'] = False
-            this['file_name_rst']  = False
+            this['file_name_rst'] = False
             doc = json.load(cnt)
         this['swagger_doc'] = rst.SwaggerObject(doc)
         doc_module = importlib.import_module('swg2rst.utils.rst')
@@ -313,7 +314,7 @@ class RSTIntegrationsTestCase(TestCase):
 
     @staticmethod
     def make_content():
-        return file_obj(u'''{
+        return File_obj(u"""{
   "swagger": "2.0",
   "info": {
     "version": "0.0.1",
@@ -372,15 +373,15 @@ class RSTIntegrationsTestCase(TestCase):
       }
     }
   }
-}''')
+}""")
 
     def test_get_regular(self):
-        '''
+        """
         SwaggerObject.get_regular_properties
-        '''
+        """
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_regular_properties('d_3dccce5dab252608978d2313d304bfbd', definition=True)
-        expect = '''.. _d_3dccce5dab252608978d2313d304bfbd:
+        expect = """.. _d_3dccce5dab252608978d2313d304bfbd:
 
 .. csv-table::
     :delim: |
@@ -388,32 +389,32 @@ class RSTIntegrationsTestCase(TestCase):
     :widths: 20, 10, 15, 15, 30, 25
 
         MyProp | No | string |  |  |  
-'''
+"""
         assert(result == expect)
 
     def test_get_type_definition(self):
-        '''SwaggerObject.get_type_description'''
+        """SwaggerObject.get_type_description"""
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_type_description('d_3dccce5dab252608978d2313d304bfbd')
         expect = ':ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`'
         assert(result == expect)
 
     def test_get_type_inline(self):
-        '''SwaggerObject.get_type_description'''
+        """SwaggerObject.get_type_description"""
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_type_description('i_7886d86d0baffa0e753f35d813f3cec6')
         expect = ':ref:`ReferenceProperty <i_7886d86d0baffa0e753f35d813f3cec6>`'
         assert(result == expect)
 
     def test_get_additional(self):
-        '''SwaggerObject.get_additional_properties'''
+        """SwaggerObject.get_additional_properties"""
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_additional_properties('i_7886d86d0baffa0e753f35d813f3cec6')
-        expect = '''.. _i_7886d86d0baffa0e753f35d813f3cec6:
+        expect = """.. _i_7886d86d0baffa0e753f35d813f3cec6:
 
 Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
 
-'''
+"""
         assert(result == expect)
 
     def test_additionalProp(self):
@@ -442,7 +443,7 @@ Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
         self.run_integration(this)
 
     # def test_intergation_instagram_inline(self):
-    #     ''''Unstable worked'''
+    #     """'Unstable worked"""
     #     file_name = 'instagram'
     #     this = self.prepare_env(file_name, inline=True)
     #     self.run_integration(this)

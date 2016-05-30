@@ -83,8 +83,6 @@ class SchemaObjects(object):
         """Return second Schema, which is extended by first Schema
         https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#composition-and-inheritance-polymorphism
         """
-        assert  schema._type == 'object'
-        assert _schema._type == 'object'
         tmp = schema.properties[:] # copy
         prop = {}
         to_dict = lambda e: prop.update({e.pop('name'): e})
