@@ -5,13 +5,12 @@ from swg2rst.utils.exampilators import Exampilator
 
 from .securityMixin import SecurityMixin
 from .schemaObjects import SchemaObjects
+from .schema import Schema, SchemaMapWrapper
 from .constants import PRIMITIVE_TYPES, SchemaTypes, examples_json_schema
 from .parameter import Parameter
 from .operation import Operation
 from .response import Response
-from .schema import Schema
 from .securityDefinition import SecurityDefinition
-from .schemaMapWrapper import SchemaMapWrapper
 
 
 class BaseSwaggerObject(SecurityMixin):
@@ -62,7 +61,6 @@ class BaseSwaggerObject(SecurityMixin):
         self.raw = obj
         self.exampilator = exampilator or Exampilator
         assert issubclass(self.exampilator, Exampilator)
-        self.exampilator(PRIMITIVE_TYPES, SchemaObjects, SchemaMapWrapper)
         if examples:
             try:
                 self.exampilator.schema_validate(examples, examples_json_schema)
@@ -106,11 +104,11 @@ class BaseSwaggerObject(SecurityMixin):
                     path_params.append(self.parameter_definitions[param['$ref']])
                 else:
                     path_params.append(
-                        Parameter(param, name=param['name'], root=self))
+                        Parameter(param, name=param['name'], root=self, storage=self.schemas))
             for method, operation in operations.items():
                 if method == 'parameters':
                     continue
-                op = Operation(operation, method, path, self, path_params)
+                op = Operation(operation, method, path, self, self.schemas, path_params)
                 self.operations[op.operation_id] = op
                 for tag in op.tags:
                     self.tags[tag].append(op)
@@ -144,14 +142,14 @@ class BaseSwaggerObject(SecurityMixin):
         for name, parameter in obj.items():
             key = '#/parameters/{}'.format(name)
             self.parameter_definitions[key] = Parameter(
-                parameter, name=parameter['name'], root=self)
+                parameter, name=parameter['name'], root=self, storage=self.schemas)
 
     def _fill_response_definitions(self, obj):
         self.response_definitions = {}
         for name, response in obj.items():
             key = '#/responses/{}'.format(name)
             self.response_definitions[key] = Response(
-                response, name=name, root=self)
+                response, name=name, root=self, storage=self.schemas)
 
     def _fill_security_definitions(self, obj):
         self.security_definitions = {

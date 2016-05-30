@@ -1,11 +1,11 @@
 import json
 from .abstractTypeObject import AbstractTypeObject
 from .constants import SchemaTypes, PRIMITIVE_TYPES
-from .schemaObjects import SchemaObjects
 
 
 class Schema(AbstractTypeObject):
-    """ Represents Swagger Schema Object
+    """
+    Represents Swagger Schema Object
     """
     schema_id = None
     schema_type = None  #: definition or inline
@@ -58,18 +58,36 @@ class Schema(AbstractTypeObject):
             schema = None
             for _obj in obj['allOf']:
                 _id = self._get_object_schema_id(_obj, SchemaTypes.INLINE)
-                if not SchemaObjects.contains(_id):
-                    schema = SchemaObjects.create_schema(_obj, 'inline', SchemaTypes.INLINE, self.root)
+                if not self.storage.contains(_id):
+                    schema = self.storage.create_schema(_obj, 'inline', SchemaTypes.INLINE, self.root)
                     assert schema.schema_id == _id
                 if len(self.all_of) > 0:
                     if schema:
-                        result_obj = SchemaObjects.merge_schemas(SchemaObjects.get(self.all_of[-1]), schema)
+                        result_obj = self.storage.merge_schemas(self.storage.get(self.all_of[-1]), schema)
                     else:
-                        result_obj = SchemaObjects.merge_schemas(SchemaObjects.get(self.all_of[-1]), SchemaObjects.get(_id))
+                        result_obj = self.storage.merge_schemas(self.storage.get(self.all_of[-1]), self.storage.get(_id))
                 self.all_of.append(_id)
                 self.nested_schemas.add(_id)
 
         self._set_schema_id()
+
+    def get_type_properties(self, property_obj, name, additional_prop=False):
+        """
+        Extend parents 'Get internal properties of property'-method
+        """
+        property_type, property_format, property_dict = \
+            super(Schema, self).get_type_properties(property_obj, name, additional_prop=additional_prop)
+        _schema = self.storage.get(property_type)
+        if _schema and ('additionalProperties' in property_obj):
+            _property_type, _property_format, _property_dict = super(Schema, self).get_type_properties(
+                property_obj['additionalProperties'], '{}-mapped'.format(name), additional_prop=True)
+            if _property_type not in PRIMITIVE_TYPES:
+                SchemaMapWrapper.wrap(self.storage.get(_property_type))
+                _schema.nested_schemas.add(_property_type)
+            else:
+                _schema.type_format = _property_type
+
+        return property_type, property_format, property_dict
 
     def _set_schema_id(self):
         _id = self._get_id(self.ref_path or json.dumps(self.raw))
@@ -111,3 +129,16 @@ class Schema(AbstractTypeObject):
 
     def __repr__(self):
         return self.name
+
+
+class SchemaMapWrapper(Schema):
+    """
+    Dedicated class to store AdditionalProperties in schema
+    """
+    def __init__(self, obj, **kwargs):
+        super(SchemaMapWrapper, self).__init__(obj, SchemaTypes.MAPPED, **kwargs)
+
+    @staticmethod
+    def wrap(schema):
+        if isinstance(schema, Schema):
+            schema.__class__ = SchemaMapWrapper

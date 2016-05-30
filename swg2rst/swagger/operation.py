@@ -16,10 +16,11 @@ class Operation(SecurityMixin):
     path = None
     root = None  #: root swagger object
 
-    def __init__(self, obj, method, path, root, path_params=None):
+    def __init__(self, obj, method, path, root, storage, path_params=None):
         self.method = method
         self.path = path
         self.root = root
+        self.storage = storage
 
         self.operation_id = obj.get(
             'operationId', self.get_operation_id(method, path))
@@ -59,7 +60,7 @@ class Operation(SecurityMixin):
                 self.parameters.append(self.root.parameter_definitions[obj['$ref']])
             else:
                 self.parameters.append(
-                    Parameter(obj, name=obj['name'], root=self.root))
+                    Parameter(obj, name=obj['name'], root=self.root, storage=self.storage))
         if path_params:
             self.parameters += path_params
         if len(self.get_parameters_by_location(['body'])) > 1:
@@ -72,7 +73,7 @@ class Operation(SecurityMixin):
             if '$ref' in obj:
                 self.responses[code] = self.root.response_definitions[obj['$ref']]
             else:
-                self.responses[code] = Response(obj, name=code, root=self.root)
+                self.responses[code] = Response(obj, name=code, root=self.root, storage=self.storage)
 
     def get_parameters_by_location(self, locations=None, excludes=None):
         """ Get parameters list by location

@@ -9,7 +9,10 @@ from io import StringIO as file_obj
 from jinja2 import Environment, PackageLoader, FileSystemLoader, TemplateError
 from unittest import TestCase, SkipTest, main
 
-from swg2rst import swagger
+from swg2rst.swagger.baseSwaggerObject import BaseSwaggerObject
+from swg2rst.swagger.constants import SecurityTypes, SchemaTypes
+from swg2rst.swagger.schema import Schema
+from swg2rst.swagger.operation import Operation
 from swg2rst.utils import rst
 from swg2rst.utils import exampilators
 try:
@@ -45,7 +48,7 @@ class BaseSwaggerTestCase(object):
             if not cls.examples:
                 raise SkipTest('Example file is empty')
 
-        cls.swagger_doc = swagger.BaseSwaggerObject(doc)
+        cls.swagger_doc = BaseSwaggerObject(doc)
         cls.exampilator = cls.swagger_doc.exampilator
 
     def test_swagger_root(self):
@@ -73,7 +76,7 @@ class BaseSwaggerTestCase(object):
             if security:
                 # list is not empty
                 security_def = self.swagger_doc.security_definitions[key]
-                self.assertEqual(security_def.type, swagger.SecurityTypes.OAUTH2)
+                self.assertEqual(security_def.type, SecurityTypes.OAUTH2)
 
                 # security scopes in security definition
                 self.assertLessEqual(set(security), set(security_def.scopes))
@@ -81,13 +84,13 @@ class BaseSwaggerTestCase(object):
     def test_schemas(self):
 
         definition_schemas = self.swagger_doc.schemas.get_schemas(
-            [swagger.SchemaTypes.DEFINITION])
+            [SchemaTypes.DEFINITION])
         self.assertEqual(len(definition_schemas), len(self.swagger_doc.raw['definitions']))
 
     def _get_definition_schema(self, name):
         schema_obj = self.swagger_doc.raw['definitions'][name]
-        schema = swagger.Schema(
-            schema_obj, swagger.SchemaTypes.DEFINITION, name=name, root=None)
+        schema = Schema(
+            schema_obj, SchemaTypes.DEFINITION, name=name, root=None, storage=self.swagger_doc.schemas)
 
         self.assertTrue(self.swagger_doc.schemas.contains(schema.schema_id))
         self.assertEqual(self.swagger_doc.schemas.get(schema.schema_id).name, name)
@@ -106,7 +109,7 @@ class BaseSwaggerTestCase(object):
                 if method == 'parameters':
                     continue
                 operation_id = operation_obj.get(
-                    'operationId', swagger.Operation.get_operation_id(method, path))
+                    'operationId', Operation.get_operation_id(method, path))
                 self.assertIn(operation_id, self.swagger_doc.operations)
 
                 operation = self.swagger_doc.operations[operation_id]
@@ -117,7 +120,7 @@ class BaseSwaggerTestCase(object):
                     self._test_security(operation.security)
 
     def test_primitive_examples(self):
-        
+
         examples = self.exampilator.DEFAULT_EXAMPLES
         method = self.exampilator.get_example_value_for_primitive_type
         pairs = (
@@ -155,7 +158,7 @@ class BaseSwaggerTestCase(object):
 
         integer_example = self.examples['types'].get(
             'integer', exampilators._DEFAULT_EXAMPLES['integer'])
-        len_examples =  self.examples.get('array_items_count', 2)
+        len_examples = self.examples.get('array_items_count', 2)
 
         self.assertEqual(
             self.exampilator.get_example_for_array(
@@ -191,8 +194,8 @@ class BaseSwaggerTestCase(object):
         path_obj = self.swagger_doc.raw['paths'][path]
 
         operation_obj = path_obj[method]
-        operation = swagger.Operation(
-            operation_obj, method, path, self.swagger_doc)
+        operation = Operation(
+            operation_obj, method, path, self.swagger_doc, self.swagger_doc.schemas)
 
         return operation
 

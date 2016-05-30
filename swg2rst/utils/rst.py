@@ -8,12 +8,11 @@ except ImportError:
 else:
     WITH_PANDOC = True
 
-from swg2rst.swagger import BaseSwaggerObject
-from swg2rst.swagger import SchemaObjects
-from swg2rst.swagger import SchemaMapWrapper
-from swg2rst.swagger import PRIMITIVE_TYPES
-from swg2rst.swagger import SchemaTypes
-from swg2rst.swagger import Operation
+from swg2rst.swagger.baseSwaggerObject import BaseSwaggerObject
+from swg2rst.swagger.schemaObjects import SchemaObjects
+from swg2rst.swagger.schema import SchemaMapWrapper
+from swg2rst.swagger.constants import PRIMITIVE_TYPES, SchemaTypes
+from swg2rst.swagger.operation import Operation
 from json import dumps
 
 HEADERS = {1: '=', 2: '~', 3: '-', 4: '+', 5: '^'}

@@ -1,7 +1,6 @@
-from .constants import SchemaTypes
-from .schemaMapWrapper import SchemaMapWrapper
-from .schema import Schema
 from operator import attrgetter
+from .constants import SchemaTypes
+from .schema import Schema, SchemaMapWrapper
 
 
 class SchemaObjects(object):
@@ -24,9 +23,9 @@ class SchemaObjects(object):
         :rtype: Schema
         """
         if schema_type == SchemaTypes.MAPPED:
-            schema = SchemaMapWrapper(obj, name=name, root=root)
+            schema = SchemaMapWrapper(obj, storage=cls, name=name, root=root)
         else:
-            schema = Schema(obj, schema_type, name=name, root=root)
+            schema = Schema(obj, schema_type, storage=cls, name=name, root=root)
         cls.add_schema(schema)
         return schema
 
@@ -99,3 +98,4 @@ class SchemaObjects(object):
                 _schema.properties.append(v)
         # d = _schema.properties
         return _schema
+

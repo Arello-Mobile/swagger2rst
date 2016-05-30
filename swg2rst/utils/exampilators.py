@@ -3,6 +3,9 @@
 from jsonschema import (
     validate as schema_validate, FormatChecker, ValidationError, SchemaError)
 from swg2rst.utils.logger import get_logger
+from swg2rst.swagger.constants import PRIMITIVE_TYPES
+from swg2rst.swagger.schemaObjects import SchemaObjects
+from swg2rst.swagger.schema import SchemaMapWrapper
 
 _DEFAULT_EXAMPLES = {
     'integer': 1,
@@ -22,18 +25,9 @@ class Exampilator(object):
     DEFAULT_EXAMPLES = _DEFAULT_EXAMPLES.copy()
     CUSTOM_EXAMPLES = dict()
     EXAMPLE_ARRAY_ITEMS_COUNT = 2
-    PRIMITIVE_TYPES = None
-    schemas = None
-    wrapper = None
 
     logger = get_logger()
     _json_format_checker = FormatChecker()
-
-    @classmethod
-    def __init__(cls, PRIMITIVE_TYPES, SchemaObjects, SchemaMapWrapper):
-        cls.PRIMITIVE_TYPES = PRIMITIVE_TYPES
-        cls.schemas = SchemaObjects
-        cls.wrapper = SchemaMapWrapper
 
     @classmethod
     def fill_examples(cls, examples):
@@ -146,14 +140,14 @@ class Exampilator(object):
             if schema.is_array:
                 result = cls.get_example_for_array(
                     schema.item, **kwargs)
-            elif schema.type in cls.PRIMITIVE_TYPES:
+            elif schema.type in PRIMITIVE_TYPES:
                 result = cls.get_example_value_for_primitive_type(
                     schema.type, schema.raw, schema.type_format, paths=paths
                 )
             elif schema.all_of:
                 result = {}
                 for _schema_id in schema.all_of:
-                    schema = cls.schemas.get(_schema_id)
+                    schema = SchemaObjects.get(_schema_id)
                     result.update(cls.get_example_by_schema(schema, **kwargs))
             else:
                 result = cls.get_example_for_object(
@@ -181,11 +175,11 @@ class Exampilator(object):
             operation.path, operation.method, response.name)
         kwargs = dict(paths=[path])
 
-        if response.type in cls.PRIMITIVE_TYPES:
+        if response.type in PRIMITIVE_TYPES:
             result = cls.get_example_value_for_primitive_type(
                 response.type, response.properties, response.type_format, **kwargs)
         else:
-            schema = cls.schemas.get(response.type)
+            schema = SchemaObjects.get(response.type)
             result = cls.get_example_by_schema(schema, **kwargs)
 
         return result
@@ -218,13 +212,13 @@ class Exampilator(object):
         if name and paths:
             paths = list(map(lambda path: '.'.join((path, name)), paths))
             result, path = cls._get_custom_example(paths)
-            if result is not None and property_['type'] in cls.PRIMITIVE_TYPES:
+            if result is not None and property_['type'] in PRIMITIVE_TYPES:
                 cls._example_validate(
                     path, result, property_['type'], property_['type_format'])
                 return result
 
-        if cls.schemas.contains(property_['type']):
-            schema = cls.schemas.get(property_['type'])
+        if SchemaObjects.contains(property_['type']):
+            schema = SchemaObjects.get(property_['type'])
             if result is not None:
                 if schema.is_array:
                     if not isinstance(result, list):
@@ -238,14 +232,14 @@ class Exampilator(object):
 
             if (not result) and schema.nested_schemas:
                 for _schema_id in schema.nested_schemas:
-                    _schema = cls.schemas.get(_schema_id)
+                    _schema = SchemaObjects.get(_schema_id)
                     if _schema:
-                        if isinstance(_schema, cls.wrapper):
+                        if isinstance(_schema, SchemaMapWrapper):
                             result[_schema.name] = cls.get_example_by_schema(_schema, **kw)
                         elif _schema.nested_schemas:
                             for _schema__id in _schema.nested_schemas:
-                                _schema_ = cls.schemas.get(_schema__id)
-                                if isinstance(_schema_, cls.wrapper):
+                                _schema_ = SchemaObjects.get(_schema__id)
+                                if isinstance(_schema_, SchemaMapWrapper):
                                     result[_schema.name] = cls.get_example_by_schema(_schema_, **kw)
         else:
             result = cls.get_example_value_for_primitive_type(

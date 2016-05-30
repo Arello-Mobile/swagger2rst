@@ -2,8 +2,6 @@ import json
 from hashlib import md5
 from collections import Mapping, Iterable
 from .constants import SchemaTypes, PRIMITIVE_TYPES
-from .schemaObjects import SchemaObjects
-from .schemaMapWrapper import SchemaMapWrapper
 
 
 class AbstractTypeObject(object):
@@ -13,24 +11,25 @@ class AbstractTypeObject(object):
     properties = None
     item = None  #: set if type is array
 
-    def __init__(self, obj, name, root, **kwargs):
+    def __init__(self, obj, name, root, storage, **kwargs):
         self.raw = obj
         self.name = name
         self.root = root
+        self.storage = storage
 
     def get_type_properties(self, property_obj, name, additional_prop=False):
-        """ Get internal properties of property
+        """ Get internal properties of property (extended in schema)
 
         :param dict property_obj: raw property object
         :param str name: name of property
+        :param bool additional_prop: recursion's param
         :return: Type, format and internal properties of property
         :rtype: tuple(str, str, dict)
         """
-
         def convert(data):
-            '''
+            """
             Convert from unicode to native ascii
-            '''
+            """
             try:
                 st = basestring
             except NameError:
@@ -47,13 +46,12 @@ class AbstractTypeObject(object):
         property_type = property_obj.get('type', 'object')
         property_format = property_obj.get('format')
         property_dict = dict()
-        _schema = None
 
         if property_type in ['object', 'array']:
             schema_type = SchemaTypes.MAPPED if additional_prop else SchemaTypes.INLINE
             schema_id = self._get_object_schema_id(property_obj, schema_type)
-            if not ('$ref' in property_obj or SchemaObjects.get(schema_id)):
-                _schema = SchemaObjects.create_schema(
+            if not ('$ref' in property_obj or self.storage.get(schema_id)):
+                _schema = self.storage.create_schema(
                     property_obj, name, schema_type, root=self.root)
                 self._after_create_schema(_schema)
             property_type = schema_id
@@ -78,15 +76,6 @@ class AbstractTypeObject(object):
         if 'enum' in property_obj:
             property_dict['enum'] = convert(property_obj['enum'])
 
-        if 'additionalProperties' in property_obj:
-            _property_type, _property_format, _property_dict = self.get_type_properties(
-                property_obj['additionalProperties'], '{}-mapped'.format(name), additional_prop=True)
-            if _property_type not in PRIMITIVE_TYPES:
-                SchemaMapWrapper.wrap(SchemaObjects.get(_property_type))
-                _schema.nested_schemas.add(_property_type)
-            else:
-                _schema.type_format = _property_type
-
         return property_type, property_format, property_dict
 
     @staticmethod
@@ -96,8 +85,7 @@ class AbstractTypeObject(object):
         return m.hexdigest()
 
     def _get_object_schema_id(self, obj, schema_type):
-        if (schema_type == SchemaTypes.prefixes[SchemaTypes.MAPPED])\
-            and ('$ref' in obj):
+        if (schema_type == SchemaTypes.prefixes[SchemaTypes.MAPPED]) and ('$ref' in obj):
             base = obj['$ref']
             prefix = schema_type
         elif ('$ref' in obj):
@@ -117,8 +105,8 @@ class AbstractTypeObject(object):
         """
         schema_id = self._get_object_schema_id(schema_obj, schema_type)
 
-        if not SchemaObjects.contains(schema_id):
-            schema = SchemaObjects.create_schema(
+        if not self.storage.contains(schema_id):
+            schema = self.storage.create_schema(
                 schema_obj, self.name, schema_type, root=self.root)
             assert schema.schema_id == schema_id
         self._type = schema_id
@@ -133,3 +121,5 @@ class AbstractTypeObject(object):
     @property
     def is_array(self):
         return self._type == 'array'
+
+
