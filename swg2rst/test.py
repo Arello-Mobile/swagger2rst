@@ -9,7 +9,7 @@ from io import StringIO as File_obj
 from jinja2 import Environment, PackageLoader
 from unittest import TestCase, SkipTest, main
 
-from swg2rst.swagger.baseSwaggerObject import BaseSwaggerObject
+from swg2rst.swagger.base_swagger_object import BaseSwaggerObject
 from swg2rst.swagger.constants import SecurityTypes, SchemaTypes
 from swg2rst.swagger.schema import Schema
 from swg2rst.swagger.operation import Operation
@@ -244,6 +244,7 @@ def iterate(generator, index):
         result = None
     index += 1
     return result, index
+
 
 class RSTIntegrationsTestCase(TestCase):
     """

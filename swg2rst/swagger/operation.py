@@ -1,7 +1,7 @@
 import re
 from swg2rst.converter_exceptions import ConverterError
 from cached_property import cached_property
-from .securityMixin import SecurityMixin
+from .security_mixin import SecurityMixin
 from .parameter import Parameter
 from .response import Response
 

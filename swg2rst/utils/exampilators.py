@@ -4,7 +4,7 @@ from jsonschema import (
     validate as schema_validate, FormatChecker, ValidationError, SchemaError)
 from swg2rst.utils.logger import get_logger
 from swg2rst.swagger.constants import PRIMITIVE_TYPES
-from swg2rst.swagger.schemaObjects import SchemaObjects
+from swg2rst.swagger.schema_objects import SchemaObjects
 from swg2rst.swagger.schema import SchemaMapWrapper
 
 DEFAULT_EXAMPLES = {

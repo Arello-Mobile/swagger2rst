@@ -1,5 +1,5 @@
 import json
-from .abstractTypeObject import AbstractTypeObject
+from .abstract_type_object import AbstractTypeObject
 from .constants import SchemaTypes, PRIMITIVE_TYPES
 
 

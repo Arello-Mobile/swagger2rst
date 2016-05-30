@@ -1,5 +1,5 @@
 from swg2rst.converter_exceptions import ConverterError
-from .abstractTypeObject import AbstractTypeObject
+from .abstract_type_object import AbstractTypeObject
 from .constants import PRIMITIVE_TYPES
 
 

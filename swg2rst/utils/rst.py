@@ -8,8 +8,8 @@ except ImportError:
 else:
     WITH_PANDOC = True
 
-from swg2rst.swagger.baseSwaggerObject import BaseSwaggerObject
-from swg2rst.swagger.schemaObjects import SchemaObjects
+from swg2rst.swagger.base_swagger_object import BaseSwaggerObject
+from swg2rst.swagger.schema_objects import SchemaObjects
 from swg2rst.swagger.schema import SchemaMapWrapper
 from swg2rst.swagger.constants import PRIMITIVE_TYPES, SchemaTypes
 from swg2rst.swagger.operation import Operation
