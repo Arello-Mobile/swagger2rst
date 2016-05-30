@@ -1,7 +1,7 @@
 import json
 from hashlib import md5
 from collections import Mapping, Iterable
-from .constants import SchemaTypes, PRIMITIVE_TYPES
+from .constants import SchemaTypes
 
 
 class AbstractTypeObject(object):
@@ -11,7 +11,7 @@ class AbstractTypeObject(object):
     properties = None
     item = None  #: set if type is array
 
-    def __init__(self, obj, name, root, storage, **kwargs):
+    def __init__(self, obj, name, root, storage):
         self.raw = obj
         self.name = name
         self.root = root

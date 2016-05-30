@@ -63,9 +63,11 @@ class Schema(AbstractTypeObject):
                     assert schema.schema_id == _id
                 if len(self.all_of) > 0:
                     if schema:
-                        result_obj = self.storage.merge_schemas(self.storage.get(self.all_of[-1]), schema)
+                        self.storage.merge_schemas(
+                            self.storage.get(self.all_of[-1]), schema
+                        )
                     else:
-                        result_obj = self.storage.merge_schemas(
+                        self.storage.merge_schemas(
                             self.storage.get(self.all_of[-1]), self.storage.get(_id)
                         )
                 self.all_of.append(_id)

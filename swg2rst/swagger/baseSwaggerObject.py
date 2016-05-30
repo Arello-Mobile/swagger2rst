@@ -5,8 +5,7 @@ from swg2rst.utils.exampilators import Exampilator
 
 from .securityMixin import SecurityMixin
 from .schemaObjects import SchemaObjects
-from .schema import Schema, SchemaMapWrapper
-from .constants import PRIMITIVE_TYPES, SchemaTypes, examples_json_schema
+from .constants import SchemaTypes, examples_json_schema
 from .parameter import Parameter
 from .operation import Operation
 from .response import Response

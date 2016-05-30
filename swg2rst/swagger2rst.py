@@ -13,10 +13,7 @@ from jinja2 import Environment, PackageLoader, FileSystemLoader, TemplateError
 from swg2rst.converter_exceptions import ConverterError
 
 
-def main(from_script=True):
-
-    from_stdin = from_script and not sys.stdin.isatty()
-
+def main():
     if sys.version_info.major == 2:
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
@@ -120,4 +117,4 @@ def _open_file(path):
 
 
 if __name__ == '__main__':
-    main(False)
+    main()

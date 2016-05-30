@@ -6,7 +6,7 @@ import os, re
 import inspect
 import importlib
 from io import StringIO as File_obj
-from jinja2 import Environment, PackageLoader, FileSystemLoader, TemplateError
+from jinja2 import Environment, PackageLoader
 from unittest import TestCase, SkipTest, main
 
 from swg2rst.swagger.baseSwaggerObject import BaseSwaggerObject
@@ -246,7 +246,7 @@ class RSTIntegrationsTestCase(TestCase):
         this = {}
         if file_name:
             this['file_name_json'] = os.path.join(SAMPLES_PATH, '{}.json'.format(cnt))
-            this['file_name_rst'] = os.path.join(SAMPLES_PATH,\
+            this['file_name_rst'] = os.path.join(SAMPLES_PATH,
                                                  '{}{inline}.rst'.format(cnt, inline='_inline' if inline else '')
                                                  )
             with codecs.open(this['file_name_json'], 'r', encoding='utf-8') as _file:
