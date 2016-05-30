@@ -46,10 +46,10 @@ class Operation(SecurityMixin):
         op_id = '{}_{}'.format(method, path)
 
         # copy-paste from swagger-js
-        op_id = re.sub('[\s!@#$%^&*()+=\[{\]};:<>|./?,\'"-]', '_', op_id)
-        op_id = re.sub('(_){2,}', '_', op_id)
-        op_id = re.sub('^[_]*', '', op_id)
-        op_id = re.sub('([_]*)$', '', op_id)
+        op_id = re.sub(r'[\s!@#$%^&*()+=\[{\]};:<>|./?,\'"-]', '_', op_id)
+        op_id = re.sub(r'(_){2,}', '_', op_id)
+        op_id = re.sub(r'^[_]*', '', op_id)
+        op_id = re.sub(r'([_]*)$', '', op_id)
 
         return op_id
 

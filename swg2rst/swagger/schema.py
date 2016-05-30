@@ -21,7 +21,6 @@ class Schema(AbstractTypeObject):
         self.schema_type = schema_type
         self.description = obj.get('description', '').replace('"', '\'')
         self._type = obj.get('type', 'object')
-        # assert self._type in ('array', 'object')
 
         self.type_format = obj.get('format')
         self.schema_example = obj.get('example')

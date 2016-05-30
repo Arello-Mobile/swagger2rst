@@ -5,7 +5,6 @@ from .constants import SchemaTypes
 
 
 class AbstractTypeObject(object):
-
     _type = None
     type_format = None
     properties = None
@@ -26,23 +25,6 @@ class AbstractTypeObject(object):
         :return: Type, format and internal properties of property
         :rtype: tuple(str, str, dict)
         """
-        def convert(data):
-            """
-            Convert from unicode to native ascii
-            """
-            try:
-                st = basestring
-            except NameError:
-                st = str
-            if isinstance(data, st):
-                return str(data)
-            elif isinstance(data, Mapping):
-                return dict(map(convert, data.iteritems()))
-            elif isinstance(data, Iterable):
-                return type(data)(map(convert, data))
-            else:
-                return data
-
         property_type = property_obj.get('type', 'object')
         property_format = property_obj.get('format')
         property_dict = dict()
@@ -124,3 +106,19 @@ class AbstractTypeObject(object):
         return self._type == 'array'
 
 
+def convert(data):
+    """
+    Convert from unicode to native ascii
+    """
+    try:
+        st = basestring
+    except NameError:
+        st = str
+    if isinstance(data, st):
+        return str(data)
+    elif isinstance(data, Mapping):
+        return dict(map(convert, data.iteritems()))
+    elif isinstance(data, Iterable):
+        return type(data)(map(convert, data))
+    else:
+        return data

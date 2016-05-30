@@ -94,6 +94,5 @@ class SchemaObjects(object):
             for k, v in prop.items():
                 v['name'] = k
                 _schema.properties.append(v)
-        # d = _schema.properties
         return _schema
 

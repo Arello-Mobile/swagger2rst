@@ -237,6 +237,14 @@ class InstagramTestCase(BaseSwaggerTestCase, TestCase):
         )
 
 
+def iterate(generator, index):
+    try:
+        result = next(generator) or ' '
+    except StopIteration:
+        result = None
+    index += 1
+    return result, index
+
 class RSTIntegrationsTestCase(TestCase):
     """
     Testing rst-specific methods
@@ -270,14 +278,6 @@ class RSTIntegrationsTestCase(TestCase):
 
     @staticmethod
     def run_integration(this):
-        def iterate(generator, index):
-            try:
-                result = next(generator) or ' '
-            except StopIteration:
-                result = None
-            index += 1
-            return result, index
-
         log = []
         flag = None
         counter = 5
@@ -417,22 +417,22 @@ Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
 """
         assert(result == expect)
 
-    def test_additionalProp(self):
+    def test_additionalprop(self):
         file_name = 'additionalProperties'
         this = self.prepare_env(file_name)
         self.run_integration(this)
 
-    def test_additionalProp_inline(self):
+    def test_additionalprop_inline(self):
         file_name = 'additionalProperties'
         this = self.prepare_env(file_name, inline=True)
         self.run_integration(this)
 
-    def test_intergation_allOf(self):
+    def test_intergation_allof(self):
         file_name = 'allOf'
         this = self.prepare_env(file_name)
         self.run_integration(this)
 
-    def test_intergation_allOf_inline(self):
+    def test_intergation_allof_inline(self):
         file_name = 'allOf'
         this = self.prepare_env(file_name, inline=True)
         self.run_integration(this)

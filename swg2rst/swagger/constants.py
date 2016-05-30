@@ -39,7 +39,7 @@ examples_json_schema = {
         'definitions': {
             'type': 'object',
             'patternProperties': {
-                '^#/definitions/\w+$': {
+                r'^#/definitions/\w+$': {
                     'type': 'object'
                 }
             },
@@ -48,10 +48,10 @@ examples_json_schema = {
         'paths': {
             'type': 'object',
             'patternProperties': {
-                '^/': {
+                r'^/': {
                     'type': 'object',
                     'patternProperties': {
-                        '^[a-z]{,7}$': {
+                        r'^[a-z]{,7}$': {
                             'type': 'object',
                             'properties': {
                                 'parameters': {

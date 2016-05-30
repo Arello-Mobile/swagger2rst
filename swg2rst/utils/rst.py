@@ -109,7 +109,6 @@ class SwaggerObject(BaseSwaggerObject):
             return _type
         kwargs['post_callback'] = self._post_process_description
         schema = SchemaObjects.get(_type)
-        # link = '.. _i_65ee0248eafa0d637832fa3e8d9d388f:'
         head = '.. _{}{}:\n\n'.format(schema.schema_id, args[0] if args else '')
         body = []
         if schema.nested_schemas:
