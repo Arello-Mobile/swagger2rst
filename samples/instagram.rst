@@ -3119,7 +3119,7 @@ Parameters
         MIN_TIMESTAMP | query | No | integer |  |  | A unix timestamp. All media returned will be taken later than this timestamp. 
         LNG | query | No | number |  |  | Longitude of the center search coordinate. If used, lat is required. 
         MAX_TIMESTAMP | query | No | integer |  |  | A unix timestamp. All media returned will be taken earlier than this timestamp. 
-        DISTANCE | query | No | integer |  | {"default": 1000, "exclusive_maximum": false, "maximum": 5000} | Default is 1km (distance=1000), max distance is 5km.
+        DISTANCE | query | No | integer |  | {"default": 1000, "maximum": 5000} | Default is 1km (distance=1000), max distance is 5km.
 
 
 Request

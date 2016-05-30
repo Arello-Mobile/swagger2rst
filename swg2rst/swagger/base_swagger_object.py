@@ -54,45 +54,28 @@ class BaseSwaggerObject(SecurityMixin):
     exampilator = None
 
     def __init__(self, obj, exampilator=None, examples=None):
-        if obj['swagger'] != '2.0':
-            raise ConverterError('Invalid Swagger version')
-
-        self.raw = obj
         self.exampilator = exampilator or Exampilator
         assert issubclass(self.exampilator, Exampilator)
+
         if examples:
             try:
                 self.exampilator.schema_validate(examples, examples_json_schema)
             except ValidationError as err:
                 raise ConverterError(err.message)
-
             self.exampilator.fill_examples(examples)
 
-        if 'definitions' in obj:
-            self._fill_schemas_from_definitions(obj['definitions'])
+        if obj.get('swagger') != '2.0':
+            raise ConverterError('Invalid Swagger version')
 
-        if 'parameters' in obj:
-            self._fill_parameter_definitions(obj['parameters'])
+        self._fill_root_parameters(obj)
+        self._fill_schemas_from_definitions(obj)
+        self._fill_parameter_definitions(obj)
+        self._fill_response_definitions(obj)
+        self._fill_security_definitions(obj)
+        self._fill_securities(obj)
+        self._fill_operations(obj)
 
-        if 'responses' in obj:
-            self._fill_response_definitions(obj['responses'])
-
-        if 'securityDefinitions' in obj:
-            self._fill_security_definitions(obj['securityDefinitions'])
-
-        if 'security' in obj:
-            self._fill_securities(obj['security'])
-
-        self.info = obj['info']
-        self.host = obj.get('host', '')
-        self.base_path = obj.get('basePath', '')
-        self.consumes = obj.get('consumes', ['application/json'])
-        self.produces = obj.get('produces', ['application/json'])
-        self.schemes = obj.get('schemes', ['http'])
-        self._fill_operations()
-        self.external_docs = obj.get('externalDocs')
-
-    def _fill_operations(self):
+    def _fill_operations(self, *args):
         self.operations = {}
         self._fill_tag_descriptions()
         self.tags = defaultdict(list)
@@ -127,34 +110,50 @@ class BaseSwaggerObject(SecurityMixin):
         :param obj:
         :return: None
         """
-        self.schemas.clear()
-        all_of_stack = []
-        for name, definition in obj.items():
-            if 'allOf' in definition:
-                all_of_stack.append((name, definition))
-            else:
+        if obj.get('definitions'):
+            self.schemas.clear()
+            all_of_stack = []
+            for name, definition in obj['definitions'].items():
+                if 'allOf' in definition:
+                    all_of_stack.append((name, definition))
+                else:
+                    self.schemas.create_schema(
+                        definition, name, SchemaTypes.DEFINITION, root=self)
+            while all_of_stack:
+                name, definition = all_of_stack.pop(0)
                 self.schemas.create_schema(
                     definition, name, SchemaTypes.DEFINITION, root=self)
-        while all_of_stack:
-            name, definition = all_of_stack.pop(0)
-            self.schemas.create_schema(
-                definition, name, SchemaTypes.DEFINITION, root=self)
 
     def _fill_parameter_definitions(self, obj):
-        self.parameter_definitions = {}
-        for name, parameter in obj.items():
-            key = '#/parameters/{}'.format(name)
-            self.parameter_definitions[key] = Parameter(
-                parameter, name=parameter['name'], root=self, storage=self.schemas)
+        if obj.get('parameters'):
+            self.parameter_definitions = {}
+            for name, parameter in obj['parameters'].items():
+                key = '#/parameters/{}'.format(name)
+                self.parameter_definitions[key] = Parameter(
+                    parameter, name=parameter['name'], root=self, storage=self.schemas)
 
     def _fill_response_definitions(self, obj):
-        self.response_definitions = {}
-        for name, response in obj.items():
-            key = '#/responses/{}'.format(name)
-            self.response_definitions[key] = Response(
-                response, name=name, root=self, storage=self.schemas)
+        if obj.get('responses'):
+            self.response_definitions = {}
+            for name, response in obj['responses'].items():
+                key = '#/responses/{}'.format(name)
+                self.response_definitions[key] = Response(
+                    response, name=name, root=self, storage=self.schemas)
 
     def _fill_security_definitions(self, obj):
-        self.security_definitions = {
-            name: SecurityDefinition(name, _obj) for name, _obj in obj.items()
-        }
+        if obj.get('securityDefinitions'):
+            self.security_definitions = {
+                name: SecurityDefinition(name, _obj) for name, _obj in obj['securityDefinitions'].items()
+            }
+
+    def _fill_root_parameters(self, obj):
+        if not obj:
+            return None
+        self.raw = obj
+        self.info = obj.get('info')
+        self.host = obj.get('host', '')
+        self.base_path = obj.get('basePath', '')
+        self.consumes = obj.get('consumes', ['application/json'])
+        self.produces = obj.get('produces', ['application/json'])
+        self.schemes = obj.get('schemes', ['http'])
+        self.external_docs = obj.get('externalDocs')

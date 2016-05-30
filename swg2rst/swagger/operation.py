@@ -21,10 +21,8 @@ class Operation(SecurityMixin):
         self.path = path
         self.root = root
         self.storage = storage
-
         self.operation_id = obj.get(
             'operationId', self.get_operation_id(method, path))
-
         self.summary = obj.get('summary')
         self.description = obj.get('description')
         self.consumes = obj.get('consumes', self.root.consumes)
@@ -32,14 +30,10 @@ class Operation(SecurityMixin):
         self.schemes = obj.get('schemes', self.root.schemes)
         self._fill_parameters(obj.get('parameters', []), path_params)
         self._fill_responses(obj['responses'])
-
         self.deprecated = obj.get('deprecated', False)
-
         self.tags = obj.get('tags', ['default'])
         self.external_docs = obj.get('externalDocs')
-
-        if 'security' in obj:
-            self._fill_securities(obj['security'])
+        self._fill_securities(obj)
 
     @staticmethod
     def get_operation_id(method, path):

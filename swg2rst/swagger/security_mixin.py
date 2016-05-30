@@ -3,6 +3,7 @@ class SecurityMixin(object):
     security = None
 
     def _fill_securities(self, obj):
-        self.security = {}
-        for security in obj:
-            self.security.update(security)
+        if obj.get('security'):
+            self.security = {}
+            for security in obj['security']:
+                self.security.update(security)

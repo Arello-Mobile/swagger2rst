@@ -27,7 +27,7 @@ class AbstractTypeObject(object):
         """
         property_type = property_obj.get('type', 'object')
         property_format = property_obj.get('format')
-        property_dict = dict()
+        property_dict = {}
 
         if property_type in ['object', 'array']:
             schema_type = SchemaTypes.MAPPED if additional_prop else SchemaTypes.INLINE
@@ -38,25 +38,15 @@ class AbstractTypeObject(object):
                 self._after_create_schema(_schema)
             property_type = schema_id
 
-        if 'default' in property_obj:
-            property_dict['default'] = property_obj['default']
-
-        if 'maximum' in property_obj:
-            property_dict['maximum'] = property_obj['maximum']
-            property_dict['exclusive_maximum'] = property_obj.get('exclusiveMaximum', False)
-
-        if 'minimum' in property_obj:
-            property_dict['minimum'] = property_obj['minimum']
-            property_dict['exclusive_minimum'] = property_obj.get('exclusiveMinimum', False)
-
-        if 'maxLength' in property_obj:
-            property_dict['max_length'] = property_obj['maxLength']
-
-        if 'minLength' in property_obj:
-            property_dict['min_length'] = property_obj['minLength']
-
-        if 'enum' in property_obj:
-            property_dict['enum'] = convert(property_obj['enum'])
+        property_dict['default'] = property_obj.get('default')
+        property_dict['maximum'] = property_obj.get('maximum')
+        property_dict['exclusive_maximum'] = property_obj.get('exclusiveMaximum')
+        property_dict['minimum'] = property_obj.get('minimum')
+        property_dict['exclusive_minimum'] = property_obj.get('exclusiveMinimum')
+        property_dict['max_length'] = property_obj.get('maxLength')
+        property_dict['min_length'] = property_obj.get('minLength')
+        property_dict['enum'] = convert(property_obj.get('enum'))
+        property_dict = {k: v for k, v in property_dict.items() if v}
 
         return property_type, property_format, property_dict
 
