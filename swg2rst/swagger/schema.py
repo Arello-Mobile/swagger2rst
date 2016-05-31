@@ -14,7 +14,6 @@ class Schema(AbstractTypeObject):
     all_of = None
 
     def __init__(self, obj, schema_type, **kwargs):
-
         assert schema_type in SchemaTypes.prefixes
         super(Schema, self).__init__(obj, **kwargs)
         self.nested_schemas = set()
@@ -49,29 +48,8 @@ class Schema(AbstractTypeObject):
             if self.item['type'] not in PRIMITIVE_TYPES:
                 self.nested_schemas.add(self.item['type'])
 
-        if 'properties' in obj:
-            self._set_properties()
-
-        if 'allOf' in obj:
-            self.all_of = []
-            schema = None
-            for _obj in obj['allOf']:
-                _id = self._get_object_schema_id(_obj, SchemaTypes.INLINE)
-                if not self.storage.contains(_id):
-                    schema = self.storage.create_schema(_obj, 'inline', SchemaTypes.INLINE, self.root)
-                    assert schema.schema_id == _id
-                if len(self.all_of) > 0:
-                    if schema:
-                        self.storage.merge_schemas(
-                            self.storage.get(self.all_of[-1]), schema
-                        )
-                    else:
-                        self.storage.merge_schemas(
-                            self.storage.get(self.all_of[-1]), self.storage.get(_id)
-                        )
-                self.all_of.append(_id)
-                self.nested_schemas.add(_id)
-
+        self._set_properties(obj)
+        self._parse_all_of_property(obj)
         self._set_schema_id()
 
     def get_type_properties(self, property_obj, name, additional_prop=False):
@@ -97,27 +75,46 @@ class Schema(AbstractTypeObject):
         self.schema_id = '{}_{}'.format(
             SchemaTypes.prefixes[self.schema_type], _id)
 
-    def _set_properties(self):
-        self.properties = []
-        required_fields = self.raw.get('required', [])
-        for name, property_obj in self.raw['properties'].items():
-            property_type, property_format, prop = self.get_type_properties(property_obj, name)
-            if property_type not in PRIMITIVE_TYPES:
-                self.nested_schemas.add(property_type)
+    def _set_properties(self, obj):
+        if obj.get('properties'):
+            self.properties = []
+            required_fields = self.raw.get('required', [])
+            for name, property_obj in self.raw['properties'].items():
+                property_type, property_format, prop = self.get_type_properties(property_obj, name)
+                if property_type not in PRIMITIVE_TYPES:
+                    self.nested_schemas.add(property_type)
 
-            _obj = {
-                'name': name,
-                'description': '',
-                'required': name in required_fields,
-                'type': property_type,
-                'type_format': property_format,
-                'type_properties': prop,
-            }
+                _obj = {
+                    'name': name,
+                    'description': '',
+                    'required': name in required_fields,
+                    'type': property_type,
+                    'type_format': property_format,
+                    'type_properties': prop,
+                }
 
-            if 'description' in property_obj:
-                _obj['description'] = property_obj['description'].replace('"', '\'')
+                if 'description' in property_obj:
+                    _obj['description'] = property_obj['description'].replace('"', '\'')
 
-            self.properties.append(_obj)
+                self.properties.append(_obj)
+
+    def _parse_all_of_property(self, obj):
+        if not obj.get('allOf'):
+            return None
+        self.all_of = []
+        schema = None
+        for _obj in obj['allOf']:
+            _id = self._get_object_schema_id(_obj, SchemaTypes.INLINE)
+            if not self.storage.contains(_id):
+                schema = self.storage.create_schema(_obj, 'inline', SchemaTypes.INLINE, self.root)
+                assert schema.schema_id == _id
+            if len(self.all_of) > 0:
+                self.storage.merge_schemas(
+                    self.storage.get(self.all_of[-1]),
+                    schema if schema else self.storage.get(_id)
+                )
+            self.all_of.append(_id)
+            self.nested_schemas.add(_id)
 
     def _after_create_schema(self, schema):
         pass
