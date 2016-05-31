@@ -308,7 +308,7 @@ class RSTIntegrationsTestCase(TestCase):
                 if this['pattern'].search(original_line):
                     pass
                 elif (original_line != generated_line) and (not flag):
-                    flag = 'o{}/g{}'.format(original_i, generated_i) # up flag
+                    flag = 'o{}/g{}'.format(original_i, generated_i)  # up flag
 
             original_line, original_i = iterate(original_lines, original_i)
             generated_line, generated_i = iterate(generated_lines, generated_i)

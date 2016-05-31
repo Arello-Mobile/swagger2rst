@@ -83,10 +83,10 @@ class SchemaObjects(object):
         """Return second Schema, which is extended by first Schema
         https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#composition-and-inheritance-polymorphism
         """
-        tmp = schema.properties[:] # copy
+        tmp = schema.properties[:]  # copy
         prop = {}
         to_dict = lambda e: prop.update({e.pop('name'): e})
-        [to_dict(i) for i in tmp] # map(to_dict, tmp)
+        [to_dict(i) for i in tmp]  # map(to_dict, tmp)
         for _prop in _schema.properties:
             if prop.get(_prop['name']):
                 prop.pop(_prop['name'])
