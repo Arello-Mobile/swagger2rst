@@ -13,33 +13,12 @@ from jinja2 import Environment, PackageLoader, FileSystemLoader, TemplateError
 from swg2rst.converter_exceptions import ConverterError
 
 
-def main(from_script=True):
-
-    from_stdin = from_script and not sys.stdin.isatty()
-
+def main():
     if sys.version_info.major == 2:
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
-    parser = argparse.ArgumentParser(
-        description='Convert "Swagger" format file to "Restructured text"')
+    args = parse_argv()
 
-    parser.add_argument(
-            'path', metavar='path', type=str, help='Path to swagger file or set\
-            it "-" and using pipelining')
-    parser.add_argument(
-        '-f', '--format', type=str, help='Format output doc file (rst)', default='rst')
-    parser.add_argument(
-        '-o', '--output', type=str, help='Output filename (default: stdout')
-    parser.add_argument(
-        '-t', '--template', type=str, help='Path to custom template file')
-    parser.add_argument(
-        '-e', '--examples', type=str, help='Path to custom examples file (yaml or json)')
-    parser.add_argument(
-        '-i', '--inline',
-        action='store_true',
-        help='Output definitions locally in paths, otherwise in isolated section')
-
-    args = parser.parse_args()
     available_formats = ('rst',)
 
     if args.format not in available_formats:
@@ -67,29 +46,15 @@ def main(from_script=True):
                 examples = _parse_file(_file)
             except ValueError:
                 sys.exit('Invalid examples file format. File must be in "yaml" or "json" format.')
-            else:
-                if examples is None:
-                    sys.exit('Examples file is empty')
+    elif not examples:
+        sys.exit('Examples file is empty')
 
     try:
         swagger_doc = doc_module.SwaggerObject(doc, examples=examples)
     except ConverterError as err:
         sys.exit(err)
 
-    jinja_env = Environment(lstrip_blocks=True, trim_blocks=True)
-
-    for name, function in inspect.getmembers(doc_module, inspect.isfunction):
-        jinja_env.filters[name] = function
-
-    if args.template:
-        jinja_env.loader = FileSystemLoader(os.path.dirname(args.template))
-        template = jinja_env.get_template(os.path.basename(args.template))
-    else:
-        jinja_env.loader = PackageLoader('swg2rst')
-        try:
-            template = jinja_env.get_template('basic.{}'.format(args.format))
-        except TemplateError as err:
-            sys.exit(u'Template Error: {}'.format(err.message))
+    template = prepare_template(args, doc_module)
 
     try:
         rst_doc = template.render(doc=swagger_doc, inline=args.inline)
@@ -111,7 +76,6 @@ def _parse_file(_file):
         doc = yaml.load(_file)
     except ValueError:
         doc = json.load(_file)
-
     return doc
 
 
@@ -119,5 +83,47 @@ def _open_file(path):
     return codecs.open(path, 'r', encoding='utf-8')
 
 
+def parse_argv():
+    parser = argparse.ArgumentParser(
+        description='Convert "Swagger" format file to "Restructured text"')
+
+    parser.add_argument(
+            'path', metavar='path', type=str, help='Path to swagger file or set\
+            it "-" and using pipelining')
+    parser.add_argument(
+        '-f', '--format', type=str, help='Format output doc file (rst)', default='rst')
+    parser.add_argument(
+        '-o', '--output', type=str, help='Output filename (default: stdout')
+    parser.add_argument(
+        '-t', '--template', type=str, help='Path to custom template file')
+    parser.add_argument(
+        '-e', '--examples', type=str, help='Path to custom examples file (yaml or json)')
+    parser.add_argument(
+        '-i', '--inline',
+        action='store_true',
+        help='Output definitions locally in paths, otherwise in isolated section')
+
+    return parser.parse_args()
+
+
+def prepare_template(flags, module):
+    jinja_env = Environment(lstrip_blocks=True, trim_blocks=True)
+
+    for name, function in inspect.getmembers(module, inspect.isfunction):
+        jinja_env.filters[name] = function
+
+    if flags.template:
+        jinja_env.loader = FileSystemLoader(os.path.dirname(flags.template))
+        template = jinja_env.get_template(os.path.basename(flags.template))
+    else:
+        jinja_env.loader = PackageLoader('swg2rst')
+        try:
+            template = jinja_env.get_template('main.{}'.format(flags.format))
+        except TemplateError as err:
+            sys.exit(u'Template Error: {}'.format(err.message))
+
+    return template
+
+
 if __name__ == '__main__':
-    main(False)
+    main()
