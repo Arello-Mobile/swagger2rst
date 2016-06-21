@@ -46,8 +46,6 @@ def main():
                 examples = _parse_file(_file)
             except ValueError:
                 sys.exit('Invalid examples file format. File must be in "yaml" or "json" format.')
-    elif not examples:
-        sys.exit('Examples file is empty')
 
     try:
         swagger_doc = doc_module.SwaggerObject(doc, examples=examples)
