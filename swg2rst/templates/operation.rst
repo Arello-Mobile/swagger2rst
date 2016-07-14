@@ -17,6 +17,7 @@
     {% for operation in doc.sorted(operations) %}
 {% set definition_suffix = (tag + operation.operation_id) if inline else '' %}
 
+
 {{ '{} ``{}``'.format(operation.method.upper(), operation.path)|header(3) }}
 
         {% if operation.deprecated %}
@@ -89,14 +90,10 @@
 
             {% set schema = operation.body %}
             {% set schema_header = 'Body'|header(5) %}
-            {% set schema_link = False %}
             {% set exists_schema = [] %}
-            {% set basic = False %}
             {% set definition = True %}
 
             {%- include "schema.rst" -%}
-
-            {% set schema_link = True %}
 
 .. code-block:: javascript
 
@@ -104,76 +101,11 @@
 
         {% endif %}
 
-{{ 'Responses'|header(4) }}
+        {%- include 'operation_responses.rst' %}
 
-        {% for code, response in doc.sorted(operation.responses) -%}
-
-{{ '**{}**'.format(code)|header(5) }}
-
-{{ response.description }}
-
-            {% if doc.schemas.contains(response.type) %}
-                {% set schema = doc.schemas.get(response.type) %}
-                {% set schema_header = '**Response Schema:**' %}
-                {% set exists_schema = [] %}
-                {% set basic = False %} {# used for recursion count #}
-
-                {% if not schema.is_inline or schema.is_array %}
-Type: {{ doc.get_type_description(response.type, definition_suffix) }}
-
-                {% if inline %}
-                    {% set temp_schema = doc.schemas.get(response.type) -%}
-                    {{ '**{} schema:**\n'.format(temp_schema.name.capitalize()) }}
-                    {% if schema.is_array %}
-{{ doc.get_regular_properties(temp_schema.item['type'], definition_suffix, definition=True) }}
-                    {% elif schema.properties %}
-{{ doc.get_regular_properties(response.type, definition_suffix, definition=True) }}
-                    {% else %}
-{{ doc.get_additional_properties(schema.schema_id, definition_suffix) }}
-                    {% endif %}
-                {% endif %}
-                {% else %}
-
-{%- include "schema.rst" -%}
-
-            {% endif %}
-
-                {% if response.headers %}
-
-{{ 'Headers:' }}
-
-.. code-block:: javascript
-
-                    {% for header in response.headers.values() %}
-    {{ doc.exampilator.get_header_example(header)|json_dumps(indent=4)|indent }}
-                    {% endfor %}
-
-                {% endif %}
-
-{{ '**Example:**' }}
-
-.. code-block:: javascript
-
-    {{ doc.exampilator.get_response_example(operation, response)|json_dumps(indent=4)|indent }}
-
-            {% endif %}
-
-        {%- endfor %}  {# end responses #}
 
         {% if operation.security %}
-
-{{ 'Security'|header(4) }}
-
-.. csv-table::
-    :header: "Security Schema", "Scopes"
-    :widths: 15, 45
-
-            {% for name, scopes in operation.security|dictsort %}
-        {{ ':ref:`{name} <securities_{name}>`'.format(name=name) }}, "{{ ', '.join(scopes) }}"
-            {% endfor %}
-
+            {%- include 'operation_security.rst' %}
         {% endif %}
-
     {% endfor %}  {# end operations #}
-
-{% endfor %}  {# end tags #}
+{% endfor -%}  {# end tags #}

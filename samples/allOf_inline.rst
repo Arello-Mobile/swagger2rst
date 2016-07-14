@@ -45,14 +45,16 @@ Responses
 Redefined update method
 
  
+.. _i_402f8658cb1ddecd701314b28554a7ccquestionnaireget_api_v1_questionnaire_get:
+
 **Response Schema:**
 
 :ref:`RecordingSerializer <d_e408f13b0c465e8b895d79e7a4a4971cquestionnaireget_api_v1_questionnaire_get>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37questionnaireget_api_v1_questionnaire_get>`
 
+.. _d_e408f13b0c465e8b895d79e7a4a4971cquestionnaireget_api_v1_questionnaire_get:
+
 **Recordingserializer schema:**
 
-
-.. _d_e408f13b0c465e8b895d79e7a4a4971cquestionnaireget_api_v1_questionnaire_get:
 
 .. csv-table::
     :delim: |
@@ -64,10 +66,10 @@ Redefined update method
         recording | Yes | string |  |  |  
 
 
+.. _i_d766acd89aec6b99c80c1b79b5a38a37questionnaireget_api_v1_questionnaire_get:
+
 **Inline schema:**
 
-
-.. _i_d766acd89aec6b99c80c1b79b5a38a37questionnaireget_api_v1_questionnaire_get:
 
 .. csv-table::
     :delim: |
@@ -107,14 +109,16 @@ Redefined update method
 Redefined create method
 
  
+.. _i_5989b460297e96c997e81f0bd37f97afquestionnaireget_api_v1_questionnaire_get:
+
 **Response Schema:**
 
 :ref:`AnswerModel <d_74b96a00174cffc078641e1f8c9fbb40questionnaireget_api_v1_questionnaire_get>` extended :ref:`inline <i_d766acd89aec6b99c80c1b79b5a38a37questionnaireget_api_v1_questionnaire_get>`
 
+.. _d_74b96a00174cffc078641e1f8c9fbb40questionnaireget_api_v1_questionnaire_get:
+
 **Answermodel schema:**
 
-
-.. _d_74b96a00174cffc078641e1f8c9fbb40questionnaireget_api_v1_questionnaire_get:
 
 .. csv-table::
     :delim: |
@@ -127,10 +131,10 @@ Redefined create method
 
 
 
+.. _i_d766acd89aec6b99c80c1b79b5a38a37questionnaireget_api_v1_questionnaire_get:
+
 **Inline schema:**
 
-
-.. _i_d766acd89aec6b99c80c1b79b5a38a37questionnaireget_api_v1_questionnaire_get:
 
 .. csv-table::
     :delim: |

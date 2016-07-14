@@ -45,15 +45,18 @@ Responses
 Redefined update method
 
  
+.. _i_402f8658cb1ddecd701314b28554a7cc:
+
 **Response Schema:**
 
 
 :ref:`RecordingSerializer <d_e408f13b0c465e8b895d79e7a4a4971c>` extended :ref:`inline <i_a2f119cfb8a0ff58060c0da8d89f9a51>`
 
-**Inline schema:**
-
 
 .. _i_a2f119cfb8a0ff58060c0da8d89f9a51:
+
+**Inline schema:**
+
 
 .. csv-table::
     :delim: |
@@ -93,15 +96,17 @@ Redefined update method
 Redefined create method
 
  
+.. _i_5989b460297e96c997e81f0bd37f97af:
+
 **Response Schema:**
 
 
 :ref:`AnswerModel <d_74b96a00174cffc078641e1f8c9fbb40>` extended :ref:`inline <i_a2f119cfb8a0ff58060c0da8d89f9a51>`
 
+.. _i_a2f119cfb8a0ff58060c0da8d89f9a51:
+
 **Inline schema:**
 
-
-.. _i_a2f119cfb8a0ff58060c0da8d89f9a51:
 
 .. csv-table::
     :delim: |
@@ -143,11 +148,11 @@ Data Structures
 ~~~~~~~~~~~~~~~
 
 
+.. _d_74b96a00174cffc078641e1f8c9fbb40:
+
 AnswerModel Model Structure
 ---------------------------
 
-
-.. _d_74b96a00174cffc078641e1f8c9fbb40:
 
 .. csv-table::
     :delim: |
@@ -160,11 +165,11 @@ AnswerModel Model Structure
 
 
 
+.. _d_e408f13b0c465e8b895d79e7a4a4971c:
+
 RecordingSerializer Model Structure
 -----------------------------------
 
-
-.. _d_e408f13b0c465e8b895d79e7a4a4971c:
 
 .. csv-table::
     :delim: |

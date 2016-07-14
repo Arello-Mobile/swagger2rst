@@ -45,7 +45,11 @@ class AbstractTypeObject(object):
         property_dict['exclusive_minimum'] = property_obj.get('exclusiveMinimum')
         property_dict['max_length'] = property_obj.get('maxLength')
         property_dict['min_length'] = property_obj.get('minLength')
+
+        #TODO: fixme. remove ugly convert. add property template renderer instead
         property_dict['enum'] = convert(property_obj.get('enum'))
+
+        #TODO: fixme. cleanup empty properties. add configurable filter for properties instead
         property_dict = {k: v for k, v in property_dict.items() if v}
 
         return property_type, property_format, property_dict

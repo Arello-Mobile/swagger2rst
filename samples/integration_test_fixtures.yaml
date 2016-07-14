@@ -1,0 +1,162 @@
+---
+  swagger: "2.0"
+  info:
+    version: "0.0.1"
+    description: ""
+    title: "API title"
+  host: ""
+  basePath: "/"
+  produces:
+    - "application/json"
+  consumes:
+    - "application/json"
+  paths:
+
+    /test/response/string:
+      get:
+        summary: "Test response string"
+        responses:
+          "200":
+            schema:
+              type: "string"
+
+    /test/response/array_of/string:
+      get:
+        summary: "Test response array of string"
+        responses:
+          "200":
+            schema:
+              type: "array"
+              items:
+                type: "string"
+
+    /test/response/array_of/object/inline_object:
+      get:
+        summary: "Test response array of inline object"
+        responses:
+          "200":
+            schema:
+              type: "array"
+              items:
+                type: "object"
+                properties:
+                  team:
+                    type: "string"
+                  score:
+                    type: "integer"
+
+    /test/response/array_of/object/defined_object:
+      get:
+        summary: "Test response array of inline object"
+        responses:
+          "200":
+            schema:
+              type: "array"
+              items:
+                $ref: "#/definitions/Book"
+
+    /test/response/array_of/array_of/string:
+      get:
+        summary: "Test response array of string"
+        responses:
+          "200":
+            schema:
+              type: "array"
+              items:
+                type: "array"
+                items:
+                  type: "string"
+
+    /test/response/object/inline_object/simple:
+      get:
+        responses:
+          "200":
+            description: "Test response simple inline object"
+            schema:
+              type: "object"
+              properties:
+                data:
+                  type: "string"
+
+    /test/response/object/inline_object/with_array_of:
+      get:
+        responses:
+          "200":
+            description: "Test response inline object with array of ref"
+            schema:
+              type: "object"
+              properties:
+                books:
+                  type: "array"
+                  items:
+                    $ref: "#/definitions/Book"
+
+    /test/response/object/inline_object/with_refs:
+      get:
+        responses:
+          "200":
+            description: "Test response inline object with refs"
+            schema:
+              type: "object"
+              properties:
+                book:
+                  $ref: "#/definitions/Book"
+                count:
+                  type: "integer"
+
+    /test/response/object/defined_object:
+      get:
+        summary: "Test response inline object"
+        responses:
+          "200":
+            schema:
+              $ref: "#/definitions/Book"
+
+    /test/response/object/defined_object/with_inline_child:
+      get:
+        summary: "Test response inline object"
+        responses:
+          "200":
+            schema:
+              $ref: "#/definitions/AuthorWithContacts"
+
+  definitions:
+
+    Book:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        title:
+          type: "string"
+        authors:
+          type: "array"
+          items:
+            $ref: "#/definitions/Author"
+
+    Author:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        first_name:
+          type: "string"
+        last_name:
+          type: "string"
+
+    AuthorWithContacts:
+      type: "object"
+      description: "AuthorWithContacts Schema description"
+      allOf:
+        - $ref: "#/definitions/Author"
+        - type: "object"
+          properties:
+            contacts:
+              type: "array"
+              items:
+                type: "object"
+                properties:
+                  phone:
+                    type: "string"
+                  address:
+                    type: "string"

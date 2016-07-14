@@ -382,16 +382,14 @@ class RSTIntegrationsTestCase(TestCase):
         """
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_regular_properties('d_3dccce5dab252608978d2313d304bfbd', definition=True)
-        expect = """.. _d_3dccce5dab252608978d2313d304bfbd:
-
-.. csv-table::
+        expect = """.. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-        MyProp | No | string |  |  |  
+        MyProp | No | string |  |  |
 """
-        assert(result == expect)
+        assert(result.strip() == expect.strip())
 
     def test_get_type_definition(self):
         """SwaggerObject.get_type_description"""
@@ -411,12 +409,10 @@ class RSTIntegrationsTestCase(TestCase):
         """SwaggerObject.get_additional_properties"""
         this = self.prepare_env(self.make_content(), file_name=False)
         result = this['swagger_doc'].get_additional_properties('i_7886d86d0baffa0e753f35d813f3cec6')
-        expect = """.. _i_7886d86d0baffa0e753f35d813f3cec6:
-
+        expect = """
 Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
-
 """
-        assert(result == expect)
+        assert(result.strip() == expect.strip())
 
     def test_additionalprop(self):
         file_name = 'additionalProperties'
@@ -444,7 +440,7 @@ Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
         self.run_integration(this)
 
     # def test_intergation_instagram_inline(self):
-    #     """'Unstable worked"""
+    #     #TODO: fixme. Unstable worked
     #     file_name = 'instagram'
     #     this = self.prepare_env(file_name, inline=True)
     #     self.run_integration(this)

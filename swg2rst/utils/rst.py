@@ -33,21 +33,13 @@ class SwaggerObject(BaseSwaggerObject):
         if isinstance(collection, dict):
             return sorted(collection.items(), key=lambda x: x[0])
 
-        tmp = {}
         if isinstance(list(collection)[0], Operation):
-            for item in collection:
-                tmp[item.operation_id] = item
-            tmp = sorted(tmp.items(), key=lambda x: x[0])
-            return (x[1] for x in tmp)
-
-        if isinstance(list(collection)[0], str):
-            for item in collection:
-                if SchemaObjects.get(item):
-                    tmp[item] = SchemaObjects.get(item).name
-                else:
-                    sys.stderr.write('Something wrong with schema {}\n'.format(item))
-            tmp = sorted(tmp.items(), key=lambda x: x[1])
-            return (x[0] for x in tmp)
+            key = lambda x: x.operation_id
+        elif isinstance(list(collection)[0], str):
+            key = lambda x: SchemaObjects.get(x).name
+        else:
+            raise TypeError(type(collection[0]))
+        return sorted(collection, key=key)
 
     def get_regular_properties(self, _type, *args, **kwargs):
         """Make table with properties by schema_id
@@ -59,18 +51,16 @@ class SwaggerObject(BaseSwaggerObject):
         schema = SchemaObjects.get(_type)
         if schema.schema_type == SchemaTypes.DEFINITION and not kwargs.get('definition'):
             return ''
-        head = """.. _{}{}:
-
-.. csv-table::
+        head = """.. csv-table::
     :delim: |
     :header: "Name", "Required", "Type", "Format", "Properties", "Description"
     :widths: 20, 10, 15, 15, 30, 25
 
-""".format(schema.schema_id, args[0] if args else '')
+"""
         body = []
         if schema.properties:
             for p in schema.properties:
-                body.append('        {} | {} | {} | {} | {} | {} \n'.format(
+                body.append('        {} | {} | {} | {} | {} | {}'.format(
                     p.get('name') or '',
                     'Yes' if p.get('required') else 'No',
                     self.get_type_description(p['type'], *args, **kwargs),
@@ -79,10 +69,11 @@ class SwaggerObject(BaseSwaggerObject):
                     p.get('description') or '')
                 )
             body.sort()
-        return head + ''.join(body)
+        return (head + '\n'.join(body))
 
-    def get_type_description(self, _type, *args, **kwargs):
+    def get_type_description(self, _type, suffix='', *args, **kwargs):
         """ Get description of type
+        :param suffix:
         :param str _type:
         :rtype: str
         """
@@ -100,7 +91,7 @@ class SwaggerObject(BaseSwaggerObject):
             result = 'array of {}'.format(
                 self.get_type_description(schema.item['type'], *args, **kwargs))
         else:
-            result = self._post_process_description(schema.name, schema, *args, **kwargs)
+            result = ':ref:`{} <{}{}>`'.format(schema.name, schema.schema_id, suffix)
         return result
 
     def get_additional_properties(self, _type, *args, **kwargs):
@@ -111,7 +102,6 @@ class SwaggerObject(BaseSwaggerObject):
         if not SchemaObjects.contains(_type):
             return _type
         schema = SchemaObjects.get(_type)
-        head = '.. _{}{}:\n\n'.format(schema.schema_id, args[0] if args else '')
         body = []
         for sch in schema.nested_schemas:  # complex types
             nested_schema = SchemaObjects.get(sch)
@@ -130,14 +120,7 @@ class SwaggerObject(BaseSwaggerObject):
         if schema.type_format:  # basic types, only head
             body.append(
                 'Map of {{"key":"{}"}}'.format(self.get_type_description(schema.type_format, *args, **kwargs)))
-        return head + ''.join(body)
-
-    @staticmethod
-    def _post_process_description(result, schema, *args, **kwargs):
-        suffix = kwargs.get('suffix') or args and args[0] or ''
-        if not schema.is_array and not schema.all_of:
-            result = ':ref:`{} <{}{}>`'.format(result, schema.schema_id, suffix)
-        return result
+        return ''.join(body)
 
 
 def header(value, header_value):

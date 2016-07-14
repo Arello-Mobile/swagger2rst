@@ -1,37 +1,31 @@
 {% set _ = exists_schema.append(schema_id) %}
-{% if not (internal_call and schema.is_array) -%}
-{{- schema_header }}
+{% if not schema.is_array %}
+.. _{{ schema.schema_id }}{{ definition_suffix }}:
+
+{{ schema_header }}
+
     {% if schema.description %}
-{{ schema.description }}
+        {{- schema.description }}
+
     {% endif %}
+    {% if schema.items %}
+        {{- doc.get_type_description(schema.item['type'], definition_suffix) }}
 
-    {% if schema.items -%}
-{{- doc.get_type_description(schema.item['type'], definition_suffix) -}}
-    {%- elif schema.properties -%}
-{{- doc.get_regular_properties(schema.schema_id, definition_suffix, definition=definition) -}}
-    {%- elif schema.all_of -%}
-{{- doc.get_type_description(schema.schema_id, definition_suffix) -}}
-    {%- else -%}
-{{- doc.get_additional_properties(schema.schema_id, definition_suffix) -}}
-    {%- endif %}
+    {% elif schema.properties %}
+        {{- doc.get_regular_properties(schema.schema_id, definition_suffix, definition=definition) }}
 
-{%- endif %}
+    {% elif schema.all_of %}
+        {{- doc.get_type_description(schema.schema_id, definition_suffix) }}
 
+    {% else %}
+        {{- doc.get_additional_properties(schema.schema_id, definition_suffix) }}
 
-{% for schema_id in doc.sorted(schema.nested_schemas) if schema_id not in exists_schema -%}
+    {% endif %}
+{% endif %}
+{% for schema_id in doc.sorted(schema.nested_schemas) if schema_id not in exists_schema %}
     {% set schema = doc.schemas.get(schema_id) %}
-    {% set internal_call = True %}
-    {% set schema_header = '**{} schema:**\n'.format(schema.name.capitalize()) %}
-    {% if schema.is_inline and not inline %}
-
-        {%- include "schema.rst" -%}
-
-    {% elif inline %}
-        {% set definition = True %}
-
-        {%- include "schema.rst" -%}
-
-        {% set definition = False %}
+    {% if schema.is_inline or inline %}
+        {% set schema_header = '**{} schema:**\n'.format(schema.name.capitalize()) %}
+        {%- include "schema.rst" %}
     {% endif %}
-    {% set internal_call = False %}    
-{%- endfor %}
+{% endfor %}

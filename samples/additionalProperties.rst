@@ -45,9 +45,9 @@ Responses
 Recording Questionnaire
 
  
-**Response Schema:**
-
 .. _i_b60304d1e15eccd74abac85655cf859a:
+
+**Response Schema:**
 
 .. csv-table::
     :delim: |
@@ -58,9 +58,9 @@ Recording Questionnaire
         status | Yes | integer |  | {'default': 200} |  
 
 
-**Response schema:**
-
 .. _i_2c8baa718514018f8bc0b15b423bc7b0:
+
+**Response schema:**
 
 .. csv-table::
     :delim: |
@@ -75,21 +75,20 @@ Recording Questionnaire
         sentenses | No | :ref:`sentenses <i_8059a72f9a14ad218776f978bd70cb5f>` |  |  |  
 
 
+.. _i_8453d26e777ff18163fc98b061d14c2d:
+
 **Answers schema:**
 
-.. _i_8453d26e777ff18163fc98b061d14c2d:
 
 Map of {"key":":ref:`AnswerModel <d_74b96a00174cffc078641e1f8c9fbb40>`"}
 
 
+.. _i_c4530b74317b8351e6d5acabf8b295c1:
 
 **Questions schema:**
 
-.. _i_c4530b74317b8351e6d5acabf8b295c1:
 
 Map of {"key":":ref:`questions-mapped <m_9ac9356799680f72839e6d91ab89d34f>`"}
-
-.. _m_9ac9356799680f72839e6d91ab89d34f:
 
 .. csv-table::
     :delim: |
@@ -100,13 +99,11 @@ Map of {"key":":ref:`questions-mapped <m_9ac9356799680f72839e6d91ab89d34f>`"}
         proper2 | No | string |  |  |  
 
 
-**Requests1 schema:**
-
 .. _i_62f432528056b6f32c9ea8bfe0276d1b:
 
-Map of {"key":"array of :ref:`requests1-mapped <i_22992d629998ed1482233fed32b5f3e2>`"}
+**Requests1 schema:**
 
-.. _i_22992d629998ed1482233fed32b5f3e2:
+Map of {"key":"array of :ref:`requests1-mapped <i_22992d629998ed1482233fed32b5f3e2>`"}
 
 .. csv-table::
     :delim: |
@@ -117,25 +114,25 @@ Map of {"key":"array of :ref:`requests1-mapped <i_22992d629998ed1482233fed32b5f3
         arr_prop2 | No | integer |  |  |  
 
 
-**Requests2 schema:**
-
 .. _i_48aa77cca2f9cb3ebcb0afbba0e5eb9d:
+
+**Requests2 schema:**
 
 Map of {"key":"array of :ref:`RecordingSerializer <d_e408f13b0c465e8b895d79e7a4a4971c>`"}
 
 
 
-**Sections schema:**
-
 .. _i_6e552287c5f0f7d46990033e84933f00:
+
+**Sections schema:**
 
 Map of {"key":"array of string"}
 
 
 
-**Sentenses schema:**
-
 .. _i_8059a72f9a14ad218776f978bd70cb5f:
+
+**Sentenses schema:**
 
 Map of {"key":"string"}
 
@@ -218,10 +215,10 @@ Data Structures
 ~~~~~~~~~~~~~~~
 
 
+.. _d_74b96a00174cffc078641e1f8c9fbb40:
+
 AnswerModel Model Structure
 ---------------------------
-
-.. _d_74b96a00174cffc078641e1f8c9fbb40:
 
 .. csv-table::
     :delim: |
@@ -234,10 +231,10 @@ AnswerModel Model Structure
 
 
 
+.. _d_e408f13b0c465e8b895d79e7a4a4971c:
+
 RecordingSerializer Model Structure
 -----------------------------------
-
-.. _d_e408f13b0c465e8b895d79e7a4a4971c:
 
 .. csv-table::
     :delim: |
