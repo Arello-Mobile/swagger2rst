@@ -1,11 +1,24 @@
+from __future__ import print_function
+
 import codecs
 import functools
-import json
-import os
+import os, re
+import inspect
+import importlib
+from io import StringIO as File_obj
+from jinja2 import Environment, PackageLoader
 from unittest import TestCase, SkipTest, main
 
-from swg2rst import swagger
-
+from swg2rst.swagger.base_swagger_object import BaseSwaggerObject
+from swg2rst.swagger.constants import SecurityTypes, SchemaTypes
+from swg2rst.swagger.schema import Schema
+from swg2rst.swagger.operation import Operation
+from swg2rst.utils import rst
+from swg2rst.utils import exampilators
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 SAMPLES_PATH = os.path.join(os.path.dirname(__file__), os.pardir, 'samples')
 
@@ -35,7 +48,7 @@ class BaseSwaggerTestCase(object):
             if not cls.examples:
                 raise SkipTest('Example file is empty')
 
-        cls.swagger_doc = swagger.BaseSwaggerObject(doc)
+        cls.swagger_doc = BaseSwaggerObject(doc)
         cls.exampilator = cls.swagger_doc.exampilator
 
     def test_swagger_root(self):
@@ -49,10 +62,9 @@ class BaseSwaggerTestCase(object):
 
     def test_security_definitions(self):
         if 'securityDefinitions' in self.swagger_doc.raw:
-            self.assertSequenceEqual(
-                self.swagger_doc.raw['securityDefinitions'].keys(),
-                self.swagger_doc.security_definitions.keys()
-            )
+            getting = sorted(self.swagger_doc.raw['securityDefinitions'].keys())
+            expected = sorted(self.swagger_doc.security_definitions.keys())
+            self.assertSequenceEqual(getting, expected)
 
     def test_doc_security(self):
         if 'security' in self.swagger_doc.raw:
@@ -64,7 +76,7 @@ class BaseSwaggerTestCase(object):
             if security:
                 # list is not empty
                 security_def = self.swagger_doc.security_definitions[key]
-                self.assertEqual(security_def.type, swagger.SecurityTypes.OAUTH2)
+                self.assertEqual(security_def.type, SecurityTypes.OAUTH2)
 
                 # security scopes in security definition
                 self.assertLessEqual(set(security), set(security_def.scopes))
@@ -72,13 +84,13 @@ class BaseSwaggerTestCase(object):
     def test_schemas(self):
 
         definition_schemas = self.swagger_doc.schemas.get_schemas(
-            [swagger.SchemaTypes.DEFINITION])
+            [SchemaTypes.DEFINITION])
         self.assertEqual(len(definition_schemas), len(self.swagger_doc.raw['definitions']))
 
     def _get_definition_schema(self, name):
         schema_obj = self.swagger_doc.raw['definitions'][name]
-        schema = swagger.Schema(
-            schema_obj, swagger.SchemaTypes.DEFINITION, name=name, root=None)
+        schema = Schema(
+            schema_obj, SchemaTypes.DEFINITION, name=name, root=None, storage=self.swagger_doc.schemas)
 
         self.assertTrue(self.swagger_doc.schemas.contains(schema.schema_id))
         self.assertEqual(self.swagger_doc.schemas.get(schema.schema_id).name, name)
@@ -97,7 +109,7 @@ class BaseSwaggerTestCase(object):
                 if method == 'parameters':
                     continue
                 operation_id = operation_obj.get(
-                    'operationId', swagger.Operation.get_operation_id(method, path))
+                    'operationId', Operation.get_operation_id(method, path))
                 self.assertIn(operation_id, self.swagger_doc.operations)
 
                 operation = self.swagger_doc.operations[operation_id]
@@ -108,7 +120,7 @@ class BaseSwaggerTestCase(object):
                     self._test_security(operation.security)
 
     def test_primitive_examples(self):
-        
+
         examples = self.exampilator.DEFAULT_EXAMPLES
         method = self.exampilator.get_example_value_for_primitive_type
         pairs = (
@@ -138,21 +150,20 @@ class BaseSwaggerTestCase(object):
                 self.assertEqual(self.exampilator.DEFAULT_EXAMPLES[_type], value)
         else:
             self.assertDictEqual(
-                self.exampilator.DEFAULT_EXAMPLES, swagger._DEFAULT_EXAMPLES)
+                self.exampilator.DEFAULT_EXAMPLES, exampilators.DEFAULT_EXAMPLES)
 
         if 'array_items_count' in self.examples:
             self.assertEqual(self.exampilator.EXAMPLE_ARRAY_ITEMS_COUNT,
                              self.examples['array_items_count'])
 
         integer_example = self.examples['types'].get(
-            'integer', swagger._DEFAULT_EXAMPLES['integer'])
-        len_examples =  self.examples.get('array_items_count', 2)
+            'integer', exampilators.DEFAULT_EXAMPLES['integer'])
+        len_examples = self.examples.get('array_items_count', 2)
 
         self.assertEqual(
             self.exampilator.get_example_for_array(
                 {'type': 'integer', 'type_properties': {}, 'type_format': None}),
             [integer_example] * len_examples)
-
 
     def _test_parameters(self, operation_obj, operation, params_count):
         if 'parameters' in operation_obj:
@@ -182,8 +193,8 @@ class BaseSwaggerTestCase(object):
         path_obj = self.swagger_doc.raw['paths'][path]
 
         operation_obj = path_obj[method]
-        operation = swagger.Operation(
-            operation_obj, method, path, self.swagger_doc)
+        operation = Operation(
+            operation_obj, method, path, self.swagger_doc, self.swagger_doc.schemas)
 
         return operation
 
@@ -224,6 +235,215 @@ class InstagramTestCase(BaseSwaggerTestCase, TestCase):
             self.exampilator.get_response_example(operation, operation.responses['200']),
             {'data': [raw['responses']['200.data']] * self.examples['array_items_count']}
         )
+
+
+def iterate(generator, index):
+    try:
+        result = next(generator) or ' '
+    except StopIteration:
+        result = None
+    index += 1
+    return result, index
+
+
+class RSTIntegrationsTestCase(TestCase):
+    """
+    Testing rst-specific methods
+    """
+    @staticmethod
+    def prepare_env(cnt, file_name=True, inline=False):
+        this = {}
+        if file_name:
+            this['file_name_json'] = os.path.join(SAMPLES_PATH, '{}.json'.format(cnt))
+            this['file_name_rst'] = os.path.join(SAMPLES_PATH,
+                                                 '{}{inline}.rst'.format(cnt, inline='_inline' if inline else '')
+                                                 )
+            with codecs.open(this['file_name_json'], 'r', encoding='utf-8') as _file:
+                doc = json.load(_file)
+        else:
+            this['file_name_json'] = False
+            this['file_name_rst'] = False
+            doc = json.load(cnt)
+        this['swagger_doc'] = rst.SwaggerObject(doc)
+        doc_module = importlib.import_module('swg2rst.utils.rst')
+        jinja_env = Environment(lstrip_blocks=True, trim_blocks=True)
+        jinja_env.loader = PackageLoader('swg2rst')
+        for name, function in inspect.getmembers(doc_module, inspect.isfunction):
+            jinja_env.filters[name] = function
+        jinja_env.filters['sorted'] = sorted
+        template = jinja_env.get_template('main.rst')
+        this['raw_rst'] = template.render(doc=this['swagger_doc'], inline=inline)
+        this['pattern'] = re.compile(r'[idm]_\w{32}')
+        this['normalize'] = lambda x: x[:-1] if x[-1] == '\n' else x
+        return this
+
+    @staticmethod
+    def run_integration(this):
+        log = []
+        flag = None
+        counter = 5
+        original_i = 0
+        generated_i = 0
+        generated_lines = (i.strip() for i in this['raw_rst'].split('\n'))
+        with codecs.open(this['file_name_rst'], 'r', encoding='utf-8') as _file:
+            original_lines = (this['normalize'](i).strip() for i in _file.readlines())
+        original_line, original_i = iterate(original_lines, original_i)
+        generated_line, generated_i = iterate(generated_lines, generated_i)
+        while generated_line or original_line:
+            log.append('o{}:{}\ng{}:{}'.format(original_i, repr(original_line), generated_i, repr(generated_line)))
+            if (len(log) > counter) and (not flag):
+                log.pop(0)
+            if (len(log) > 2 * counter - 1) and flag:
+                print('\n'.join(log) + '\no:Original rst / g:Generated rst')
+                raise Exception('Differences found at {} line!'.format(flag))
+            if original_line == ' ' and generated_line == ' ':
+                pass
+            elif original_line != ' ' and generated_line == ' ':
+                while generated_line == ' ':
+                    generated_line, generated_i = iterate(generated_lines, generated_i)
+            elif original_line == ' ' and generated_line != ' ':
+                while original_line == ' ':
+                    original_line, original_i = iterate(original_lines, original_i)
+            else:
+                if this['pattern'].search(original_line):
+                    pass
+                elif (original_line != generated_line) and (not flag):
+                    flag = 'o{}/g{}'.format(original_i, generated_i)  # up flag
+
+            original_line, original_i = iterate(original_lines, original_i)
+            generated_line, generated_i = iterate(generated_lines, generated_i)
+
+    @staticmethod
+    def make_content():
+        return File_obj(u"""{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "description": "",
+    "title": "API title"
+  },
+  "host": "",
+  "basePath": "/",
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/short_path": {
+      "get": {
+        "responses": {
+          "999": {
+            "schema": {
+              "type": "object",
+                "properties": {
+                  "ReferenceProperty": {
+                    "additionalProperties": {
+                      "$ref": "#/definitions/SimpleSerializer" 
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+  "definitions": {
+    "SimpleSerializer": {
+      "type": "object",
+      "properties": {
+        "MyProp": {
+          "type": "string"
+        }
+      }
+    },
+    "DifficultSerializer": {
+      "schema": {
+        "allOf": [
+          {"$ref": "#/definitions/SimpleSerializer"},
+          { "type": "object",
+          "properties":{
+            "YouProp": {
+              "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}""")
+
+    def test_get_regular(self):
+        """
+        SwaggerObject.get_regular_properties
+        """
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_regular_properties('d_3dccce5dab252608978d2313d304bfbd', definition=True)
+        expect = """.. csv-table::
+    :delim: |
+    :header: "Name", "Required", "Type", "Format", "Properties", "Description"
+    :widths: 20, 10, 15, 15, 30, 25
+
+        MyProp | No | string |  |  |
+"""
+        assert(result.strip() == expect.strip())
+
+    def test_get_type_definition(self):
+        """SwaggerObject.get_type_description"""
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_type_description('d_3dccce5dab252608978d2313d304bfbd')
+        expect = ':ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`'
+        assert(result == expect)
+
+    def test_get_type_inline(self):
+        """SwaggerObject.get_type_description"""
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_type_description('i_7886d86d0baffa0e753f35d813f3cec6')
+        expect = ':ref:`ReferenceProperty <i_7886d86d0baffa0e753f35d813f3cec6>`'
+        assert(result == expect)
+
+    def test_get_additional(self):
+        """SwaggerObject.get_additional_properties"""
+        this = self.prepare_env(self.make_content(), file_name=False)
+        result = this['swagger_doc'].get_additional_properties('i_7886d86d0baffa0e753f35d813f3cec6')
+        expect = """
+Map of {"key":":ref:`SimpleSerializer <d_3dccce5dab252608978d2313d304bfbd>`"}
+"""
+        assert(result.strip() == expect.strip())
+
+    def test_additionalprop(self):
+        file_name = 'additionalProperties'
+        this = self.prepare_env(file_name)
+        self.run_integration(this)
+
+    def test_additionalprop_inline(self):
+        file_name = 'additionalProperties'
+        this = self.prepare_env(file_name, inline=True)
+        self.run_integration(this)
+
+    def test_intergation_allof(self):
+        file_name = 'allOf'
+        this = self.prepare_env(file_name)
+        self.run_integration(this)
+
+    def test_intergation_allof_inline(self):
+        file_name = 'allOf'
+        this = self.prepare_env(file_name, inline=True)
+        self.run_integration(this)
+
+    def test_intergation_instagram(self):
+        file_name = 'instagram'
+        this = self.prepare_env(file_name)
+        self.run_integration(this)
+
+    # def test_intergation_instagram_inline(self):
+    #     #TODO: fixme. Unstable worked
+    #     file_name = 'instagram'
+    #     this = self.prepare_env(file_name, inline=True)
+    #     self.run_integration(this)
 
 
 if __name__ == '__main__':
