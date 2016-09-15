@@ -6,7 +6,7 @@ long_description = open('README.rst' if os.path.exists('README.rst') else 'READM
 
 setup(
     name='swagger2rst',
-    version='0.0.3',
+    version='0.0.4',
     packages=find_packages(),
     license='MIT',
     description='Tool for convert "Swagger" format file to "Restructured text"',
