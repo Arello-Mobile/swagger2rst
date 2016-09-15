@@ -2,5 +2,5 @@ graft swg2rst
 recursive-exclude swg2rst *.pyc
 include requirements.txt
 include README.md
-include swg2rst/templates
+include swg2rst/templates/*
 exclude swg2rst/test.py
