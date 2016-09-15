@@ -2,10 +2,28 @@
 
 [![Build Status](https://travis-ci.org/Arello-Mobile/swagger2rst.svg?branch=master)](https://travis-ci.org/Arello-Mobile/swagger2rst)
 
-## Install
-```bash
-pip install swagger2rst
+
+## Why?
+
+This tools are written as part of our Documentation Toolkit which we use in our job daily.
+The main idea of toolkit is to make a process of creating and updating documentation able to be automated
+
+Other parts of our toolkit is:
+
+- [py2swagger](https://github.com/Arello-Mobile/py2swagger)
+- [swagger2rst](https://github.com/Arello-Mobile/swagger2rst)
+- [sphinx-confluence](https://github.com/Arello-Mobile/sphinx-confluence)
+- [confluence-publisher](https://github.com/Arello-Mobile/confluence-publisher)
+
+
+# Install
+
+Install from [PyPI](https://pypi.python.org/pypi/swagger2rst) with
+
 ```
+$ pip install swagger2rst
+```
+
 
 ## Usage examples
 Command - ``swg2rst``
