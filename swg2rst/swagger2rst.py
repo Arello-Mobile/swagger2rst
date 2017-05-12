@@ -19,12 +19,7 @@ def main():
 
     args = parse_argv()
 
-    available_formats = ('rst',)
-
-    if args.format not in available_formats:
-        sys.exit('Invalid output format')
-
-    doc_module = importlib.import_module('swg2rst.utils.{}'.format(args.format))
+    doc_module = importlib.import_module('swg2rst.utils.rst')
 
     _file = sys.stdin if args.path == '-' else _open_file(args.path)
 
@@ -89,9 +84,7 @@ def parse_argv():
             'path', metavar='path', type=str, help='Path to swagger file or set\
             it "-" and using pipelining')
     parser.add_argument(
-        '-f', '--format', type=str, help='Format output doc file (rst)', default='rst')
-    parser.add_argument(
-        '-o', '--output', type=str, help='Output filename (default: stdout')
+        '-o', '--output', type=str, help='Output filename (default: stdout)')
     parser.add_argument(
         '-t', '--template', type=str, help='Path to custom template file')
     parser.add_argument(
@@ -116,7 +109,7 @@ def prepare_template(flags, module):
     else:
         jinja_env.loader = PackageLoader('swg2rst')
         try:
-            template = jinja_env.get_template('main.{}'.format(flags.format))
+            template = jinja_env.get_template('main.rst')
         except TemplateError as err:
             sys.exit(u'Template Error: {}'.format(err.message))
 

@@ -24,7 +24,6 @@ Positional arguments:
 
 Options:
 
-- ``--format(-f)`` - format output doc file - "rst" (required)
 - ``--destination-path (-d)`` - path to folder for saving files
 - ``--template (-t)`` - path to custom template fisle (default: templates/basic.<format>)
 - ``--examples (-e)`` - path to custom examples file - "json" or "yaml"
@@ -34,9 +33,9 @@ Example:
 
 .. code-block:: bash
 
-    swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/
-    swg2rst samples/swagger.json -f rst -d /home/user/rst_docs/ -e /home/user/examples.yaml
-    cat docs/swagger.json | swg2rst -f rst -t templates/custom.rst | grep /api
+    swg2rst samples/swagger.json -d /home/user/rst_docs/
+    swg2rst samples/swagger.json -d /home/user/rst_docs/ -e /home/user/examples.yaml
+    cat docs/swagger.json | swg2rst -t templates/custom.rst | grep /api
 
 
 Optional improvements

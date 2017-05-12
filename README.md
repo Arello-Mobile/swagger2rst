@@ -30,7 +30,6 @@ Command - ``swg2rst``
 
 Required arguments:
 - ``path`` - path to a swagger file ("json" or "yaml")
-- ``--format (-f)`` - output file format. Currenty only "rst" is supported (required)
 
 Options:
 - ``--output (-o)`` - output filename (default: stdout)
@@ -40,9 +39,9 @@ Options:
 
 Example:
 ```bash
-> swg2rst samples/swagger.json -f rst -o /home/user/rst_docs/swagger.rst
-> swg2rst samples/swagger.json -f rst -o /home/user/rst_docs/swagger.rst -e /home/user/examples.yaml
-> cat docs/swagger.json | swg2rst -f rst -t templates/custom.rst | grep /api
+> swg2rst samples/swagger.json -o /home/user/rst_docs/swagger.rst
+> swg2rst samples/swagger.json -o /home/user/rst_docs/swagger.rst -e /home/user/examples.yaml
+> cat docs/swagger.json | swg2rst -t templates/custom.rst | grep /api
 ```
 
 ## Additional enhancements
