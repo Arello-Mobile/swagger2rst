@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from operator import attrgetter
 from .constants import SchemaTypes
 from .schema import Schema, SchemaMapWrapper
@@ -8,7 +9,7 @@ class SchemaObjects(object):
     Schema collection
     """
 
-    _schemas = dict()
+    _schemas = OrderedDict()
 
     @classmethod
     def create_schema(cls, obj, name, schema_type, root):
@@ -76,7 +77,7 @@ class SchemaObjects(object):
 
     @classmethod
     def clear(cls):
-        cls._schemas = dict()
+        cls._schemas = OrderedDict()
 
     @classmethod
     def merge_schemas(cls, schema, _schema):
