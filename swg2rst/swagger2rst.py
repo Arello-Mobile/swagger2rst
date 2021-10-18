@@ -71,7 +71,7 @@ def main():
 
 def _parse_file(_file):
     try:
-        doc = yaml.load(_file)
+        doc = yaml.load(_file, Loader=yaml.FullLoader)
     except ValueError:
         doc = json.load(_file)
     return doc
